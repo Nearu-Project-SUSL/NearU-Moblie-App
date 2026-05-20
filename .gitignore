@@ -1,0 +1,53 @@
+# Expo / React Native
+node_modules/
+.expo/
+dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# Xcode / iOS
+build/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata/
+*.xccheckout
+*.xcworkspace
+!default.xcworkspace
+*.xcuserstate
+*.xcappdata
+*.ipa
+*.sublime-project
+*.sublime-workspace
+*.mime
+
+# Android
+.gradle/
+local.properties
+*.apk
+*.aar
+*.ap_
+*.der
+*.crash
+*.dump
+*.jack
+*.m
+*.native
+*.res
+*.so
+*.xml
+captures/
+
+# macOS
+.DS_Store
+
+# Local Env / Credentials
+.env*.local
+.env
