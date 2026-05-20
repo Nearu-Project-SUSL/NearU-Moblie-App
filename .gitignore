@@ -1,11 +1,33 @@
-# Expo / React Native
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# dependencies
 node_modules/
+package-lock.json
+
+# Expo
 .expo/
 dist/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-package-lock.json
+web-build/
+expo-env.d.ts
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# local env files
+.env*.local
+.env
+
+# typescript
+*.tsbuildinfo
 
 # Xcode / iOS
 build/
@@ -17,7 +39,7 @@ build/
 !default.mode2v3
 *.perspectivev3
 !default.perspectivev3
-xcuserdata/
+userdata/
 *.xccheckout
 *.xcworkspace
 !default.xcworkspace
@@ -44,10 +66,10 @@ local.properties
 *.so
 *.xml
 captures/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
 
-# macOS
-.DS_Store
-
-# Local Env / Credentials
-.env*.local
-.env
+app-example
