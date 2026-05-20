@@ -1,0 +1,7 @@
+{
+  "name": "NearU-Mobile-App",
+  "slug": "NearU-Mobile-App",
+  "plugins": [
+    "expo-secure-store"
+  ]
+}
