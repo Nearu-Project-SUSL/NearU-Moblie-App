@@ -18,6 +18,7 @@ import { Colors } from '../../constants/Colors';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { HapticService } from '../../services/HapticService';
+import { GoogleIcon } from '../../components/GoogleIcon';
 import { KeyRound, Mail, GraduationCap, Eye, EyeOff, Sparkles, AlertCircle } from 'lucide-react-native';
 
 export default function LoginScreen() {
@@ -412,6 +413,7 @@ export default function LoginScreen() {
               accessibilityRole="button"
               accessibilityLabel="Google Authentication button"
             >
+              <GoogleIcon size={14} style={{ marginRight: 6 }} />
               <Text style={[styles.socialBtnText, { color: themeColors.text }]}>Google</Text>
             </Pressable>
 
