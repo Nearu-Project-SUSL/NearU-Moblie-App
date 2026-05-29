@@ -19,7 +19,7 @@ import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { HapticService } from '../../services/HapticService';
 import { GoogleIcon } from '../../components/GoogleIcon';
-import { KeyRound, Mail, GraduationCap, Eye, EyeOff, Sparkles, AlertCircle } from 'lucide-react-native';
+import { KeyRound, Mail, GraduationCap, Eye, EyeOff, Sparkles, AlertCircle, UserPlus } from 'lucide-react-native';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -378,10 +378,14 @@ export default function LoginScreen() {
               router.push('/(auth)/register');
             }} 
             variant="outline"
+            icon={<UserPlus size={16} color={isDark ? '#60A5FA' : themeColors.primary} />}
             style={[styles.actionBtn, { 
               marginTop: 12,
-              borderColor: isDark ? 'rgba(46, 158, 191, 0.4)' : themeColors.border,
-              borderWidth: 1.5,
+              backgroundColor: isDark ? '#1E293B' : '#F1F5F9',
+              borderWidth: 0,
+              borderRadius: 14,
+              elevation: 0,
+              shadowOpacity: 0,
             }]}
             textStyle={{ color: isDark ? '#60A5FA' : themeColors.primary, fontWeight: '700' }}
             accessible={true}
