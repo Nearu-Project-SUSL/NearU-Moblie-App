@@ -8,106 +8,256 @@ import {
   useColorScheme, 
   KeyboardAvoidingView, 
   Platform, 
-  ScrollView 
+  ScrollView,
+  StatusBar,
+  Dimensions
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../hooks/useAuth';
 import { Colors } from '../../constants/Colors';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
-import { KeyRound, Mail, MapPin } from 'lucide-react-native';
+import { KeyRound, Mail, GraduationCap, Eye, EyeOff, Sparkles, AlertCircle } from 'lucide-react-native';
+
+const { width } = Dimensions.get('window');
 
 export default function LoginScreen() {
   const router = useRouter();
   const { login, isLoading } = useAuth();
-  const systemTheme = useColorScheme() ?? 'light';
+  const systemTheme = useColorScheme() ?? 'dark'; // Fallback to dark for premium look
   const themeColors = Colors[systemTheme];
+  const isDark = systemTheme === 'dark';
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  
+  // Validation and Status states
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [statusMsg, setStatusMsg] = useState<{ text: string; type: 'error' | 'warning' | 'success' } | null>(null);
+
+  // Email format validator
+  const validateEmail = (text: string) => {
+    const reg = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w\w+)+$/;
+    return reg.test(text);
+  };
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      setErrorMsg('Please populate all credential inputs.');
-      return;
+    let hasError = false;
+
+    if (!email) {
+      setEmailError('Email is required');
+      hasError = true;
+    } else if (!validateEmail(email)) {
+      setEmailError('Please enter a valid email address');
+      hasError = true;
+    } else {
+      setEmailError(null);
     }
-    setErrorMsg(null);
+
+    if (!password) {
+      setPasswordError('Password is required');
+      hasError = true;
+    } else if (password.length < 6) {
+      setPasswordError('Password must be at least 6 characters');
+      hasError = true;
+    } else {
+      setPasswordError(null);
+    }
+
+    if (hasError) return;
+
+    setStatusMsg(null);
+    
+    // Call authentication service
     const result = await login(email, password);
-    if (!result.success) {
-      setErrorMsg(result.error || 'Authentication rejected.');
+    
+    if (result.success) {
+      if (result.error) {
+        // Logged in successfully but with a warning (e.g. Mock fail-safe fallback)
+        setStatusMsg({ text: result.error, type: 'warning' });
+        setTimeout(() => {
+          router.replace('/(tabs)/browse');
+        }, 1500);
+      } else {
+        setStatusMsg({ text: 'Sign in successful! Entering campus...', type: 'success' });
+        setTimeout(() => {
+          router.replace('/(tabs)/browse');
+        }, 800);
+      }
+    } else {
+      setStatusMsg({ text: result.error || 'Authentication rejected.', type: 'error' });
     }
+  };
+
+  const handleGuestLogin = async () => {
+    setStatusMsg({ text: 'Logging in as Guest Student...', type: 'success' });
+    // Attempt standard guest account login using mock credential triggers
+    const result = await login('guest@nearu.com', 'password123');
+    if (result.success) {
+      router.replace('/(tabs)/browse');
+    } else {
+      setStatusMsg({ text: 'Failed to access guest session.', type: 'error' });
+    }
+  };
+
+  const handleGoogleMockLogin = () => {
+    setStatusMsg({
+      text: 'Google authentication requires native configurations. Logging in with a guest student account.',
+      type: 'warning'
+    });
+    setTimeout(() => {
+      handleGuestLogin();
+    }, 2000);
   };
 
   return (
     <KeyboardAvoidingView 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
-      style={styles.container}
+      style={[styles.container, { backgroundColor: isDark ? '#080C14' : '#F8FAFC' }]}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+      
+      {/* Premium UI Background Floating Orbs */}
+      <View style={styles.backgroundContainer} pointerEvents="none">
+        <View style={[styles.glowingOrb, styles.orbTopRight, { backgroundColor: isDark ? 'rgba(59, 130, 246, 0.12)' : 'rgba(37, 99, 235, 0.08)' }]} />
+        <View style={[styles.glowingOrb, styles.orbBottomLeft, { backgroundColor: isDark ? 'rgba(46, 158, 191, 0.15)' : 'rgba(46, 158, 191, 0.08)' }]} />
+      </View>
+
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent} 
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         {/* Brand Header */}
         <View style={styles.headerBlock}>
-          <View style={[styles.logoIconContainer, { backgroundColor: themeColors.primaryLight }]}>
-            <MapPin size={32} color={themeColors.primary} />
+          <View style={[styles.logoIconContainer, { 
+            backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : '#DBEAFE',
+            borderColor: isDark ? 'rgba(59, 130, 246, 0.3)' : 'rgba(37, 99, 235, 0.15)'
+          }]}>
+            <GraduationCap size={36} color={isDark ? '#60A5FA' : '#2563EB'} />
           </View>
           <Text style={[styles.brandTitle, { color: themeColors.text }]}>NearU</Text>
           <Text style={[styles.brandSubtitle, { color: themeColors.textSecondary }]}>
-            Your university campus marketplace. Connect, order, and track locally.
+            Connecting Your Campus • One Tap Away
           </Text>
         </View>
 
         {/* Credentials Form Card */}
-        <Card style={styles.formCard} padding="large">
-          <Text style={[styles.formTitle, { color: themeColors.text }]}>Welcome Back</Text>
-          <Text style={[styles.formSubtitle, { color: themeColors.textSecondary }]}>
-            Log in to access your student services
-          </Text>
+        <Card 
+          variant={isDark ? 'elevated' : 'bordered'} 
+          padding="large" 
+          style={{
+            ...styles.formCard, 
+            backgroundColor: isDark ? 'rgba(30, 41, 59, 0.65)' : 'rgba(255, 255, 255, 0.9)',
+            borderColor: isDark ? 'rgba(46, 158, 191, 0.25)' : '#E2E8F0',
+            borderWidth: 1.5,
+          }}
+        >
+          <View style={styles.cardHeader}>
+            <Text style={[styles.formTitle, { color: themeColors.text }]}>Welcome Back</Text>
+            <Text style={[styles.formSubtitle, { color: themeColors.textSecondary }]}>
+              Enter credentials to access campus services
+            </Text>
+          </View>
 
-          {errorMsg && (
-            <View style={[styles.errorBox, { backgroundColor: themeColors.dangerLight }]}>
-              <Text style={[styles.errorText, { color: themeColors.danger }]}>{errorMsg}</Text>
+          {/* Status Message (Toasts/Errors) */}
+          {statusMsg && (
+            <View style={[
+              styles.statusBox, 
+              { 
+                backgroundColor: statusMsg.type === 'error' ? themeColors.dangerLight : 
+                                statusMsg.type === 'warning' ? themeColors.warningLight : 
+                                themeColors.successLight 
+              }
+            ]}>
+              <AlertCircle size={16} color={
+                statusMsg.type === 'error' ? themeColors.danger : 
+                statusMsg.type === 'warning' ? themeColors.warning : 
+                themeColors.success
+              } style={styles.statusIcon} />
+              <Text style={[
+                styles.statusText, 
+                { 
+                  color: statusMsg.type === 'error' ? themeColors.danger : 
+                         statusMsg.type === 'warning' ? themeColors.warning : 
+                         themeColors.success 
+                }
+              ]}>
+                {statusMsg.text}
+              </Text>
             </View>
           )}
 
           {/* Email Input */}
           <View style={styles.inputGroup}>
             <Text style={[styles.inputLabel, { color: themeColors.textSecondary }]}>University Email</Text>
-            <View style={[styles.inputWrapper, { borderColor: themeColors.border, backgroundColor: systemTheme === 'light' ? '#F8FAFC' : '#0F172A' }]}>
-              <Mail size={18} color={themeColors.textMuted} style={styles.inputIcon} />
+            <View style={[
+              styles.inputWrapper, 
+              { 
+                borderColor: emailError ? themeColors.danger : isDark ? 'rgba(46, 158, 191, 0.2)' : themeColors.border, 
+                backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#F8FAFC' 
+              }
+            ]}>
+              <Mail size={18} color={emailError ? themeColors.danger : themeColors.textMuted} style={styles.inputIcon} />
               <TextInput
                 value={email}
-                onChangeText={setEmail}
-                placeholder="alex@university.edu"
+                onChangeText={(text) => {
+                  setEmail(text);
+                  if (emailError) setEmailError(null);
+                }}
+                placeholder="student@sab.lk"
                 placeholderTextColor={themeColors.textMuted}
                 autoCapitalize="none"
                 keyboardType="email-address"
                 textContentType="emailAddress"
                 style={[styles.textInput, { color: themeColors.text }]}
+                editable={!isLoading}
               />
             </View>
+            {emailError && <Text style={[styles.errorLabel, { color: themeColors.danger }]}>{emailError}</Text>}
           </View>
 
           {/* Password Input */}
           <View style={styles.inputGroup}>
             <View style={styles.passwordHeader}>
               <Text style={[styles.inputLabel, { color: themeColors.textSecondary }]}>Password</Text>
-              <Pressable>
-                <Text style={[styles.forgotText, { color: themeColors.primary }]}>Forgot?</Text>
+              <Pressable style={styles.forgotBtn}>
+                <Text style={[styles.forgotText, { color: isDark ? '#60A5FA' : themeColors.primary }]}>Forgot Password?</Text>
               </Pressable>
             </View>
-            <View style={[styles.inputWrapper, { borderColor: themeColors.border, backgroundColor: systemTheme === 'light' ? '#F8FAFC' : '#0F172A' }]}>
-              <KeyRound size={18} color={themeColors.textMuted} style={styles.inputIcon} />
+            <View style={[
+              styles.inputWrapper, 
+              { 
+                borderColor: passwordError ? themeColors.danger : isDark ? 'rgba(46, 158, 191, 0.2)' : themeColors.border, 
+                backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#F8FAFC' 
+              }
+            ]}>
+              <KeyRound size={18} color={passwordError ? themeColors.danger : themeColors.textMuted} style={styles.inputIcon} />
               <TextInput
                 value={password}
-                onChangeText={setPassword}
-                placeholder="••••••••"
+                onChangeText={(text) => {
+                  setPassword(text);
+                  if (passwordError) setPasswordError(null);
+                }}
+                placeholder="Enter password"
                 placeholderTextColor={themeColors.textMuted}
-                secureTextEntry
+                secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 textContentType="password"
                 style={[styles.textInput, { color: themeColors.text }]}
+                editable={!isLoading}
               />
+              <Pressable onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
+                {showPassword ? (
+                  <EyeOff size={18} color={themeColors.textMuted} />
+                ) : (
+                  <Eye size={18} color={themeColors.textMuted} />
+                )}
+              </Pressable>
             </View>
+            {passwordError && <Text style={[styles.errorLabel, { color: themeColors.danger }]}>{passwordError}</Text>}
           </View>
 
           {/* Login Button */}
@@ -116,8 +266,68 @@ export default function LoginScreen() {
             onPress={handleLogin} 
             loading={isLoading}
             variant="primary"
-            style={styles.actionBtn}
+            style={[styles.actionBtn, { 
+              backgroundColor: isDark ? '#2E9EBF' : themeColors.primary,
+              shadowColor: isDark ? '#2E9EBF' : themeColors.primary,
+              shadowOffset: { width: 0, height: 6 },
+              shadowOpacity: isDark ? 0.3 : 0.15,
+              shadowRadius: 10,
+              elevation: 4
+            }]}
+            textStyle={{ color: isDark ? '#000000' : '#FFFFFF', fontWeight: '700' }}
           />
+
+          {/* Prominent Create Account Button */}
+          <Button 
+            title="Create an Account" 
+            onPress={() => router.push('/(auth)/register')} 
+            variant="outline"
+            style={[styles.actionBtn, { 
+              marginTop: 12,
+              borderColor: isDark ? 'rgba(46, 158, 191, 0.4)' : themeColors.border,
+              borderWidth: 1.5,
+            }]}
+            textStyle={{ color: isDark ? '#60A5FA' : themeColors.primary, fontWeight: '700' }}
+          />
+
+          {/* Or Divider */}
+          <View style={styles.dividerBlock}>
+            <View style={[styles.dividerLine, { backgroundColor: isDark ? 'rgba(46, 158, 191, 0.2)' : themeColors.border }]} />
+            <Text style={[styles.dividerText, { color: themeColors.textMuted, backgroundColor: isDark ? '#1C2738' : '#FFFFFF' }]}>
+              OR CONTINUE WITH
+            </Text>
+          </View>
+
+          {/* Social and Guest Access Buttons */}
+          <View style={styles.row}>
+            <Pressable 
+              onPress={handleGoogleMockLogin} 
+              style={[
+                styles.socialBtn, 
+                { 
+                  borderColor: isDark ? 'rgba(46, 158, 191, 0.2)' : themeColors.border,
+                  backgroundColor: isDark ? 'rgba(15, 23, 42, 0.4)' : '#FFFFFF' 
+                }
+              ]}
+            >
+              <Text style={[styles.socialBtnText, { color: themeColors.text }]}>Google</Text>
+            </Pressable>
+
+            <Pressable 
+              onPress={handleGuestLogin} 
+              style={[
+                styles.socialBtn, 
+                { 
+                  borderColor: isDark ? 'rgba(46, 158, 191, 0.2)' : themeColors.border,
+                  backgroundColor: isDark ? 'rgba(15, 23, 42, 0.4)' : '#FFFFFF'
+                }
+              ]}
+            >
+              <Sparkles size={14} color={isDark ? '#60A5FA' : themeColors.primary} style={{ marginRight: 6 }} />
+              <Text style={[styles.socialBtnText, { color: themeColors.text }]}>Guest</Text>
+            </Pressable>
+          </View>
+
         </Card>
 
         {/* Footer Redirect Options */}
@@ -126,9 +336,13 @@ export default function LoginScreen() {
             New to NearU?{' '}
           </Text>
           <Pressable onPress={() => router.push('/(auth)/register')}>
-            <Text style={[styles.footerLink, { color: themeColors.primary }]}>Create an Account</Text>
+            <Text style={[styles.footerLink, { color: isDark ? '#60A5FA' : themeColors.primary }]}>Create an Account</Text>
           </Pressable>
         </View>
+        
+        <Text style={[styles.legalText, { color: themeColors.textMuted }]}>
+          By continuing, you agree to NearU's Terms of Service and Privacy Policy.
+        </Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -138,58 +352,103 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  backgroundContainer: {
+    ...StyleSheet.absoluteFillObject,
+    overflow: 'hidden',
+    zIndex: 0,
+  },
+  glowingOrb: {
+    position: 'absolute',
+    width: 250,
+    height: 250,
+    borderRadius: 125,
+    opacity: 0.8,
+  },
+  orbTopRight: {
+    top: -50,
+    right: -50,
+  },
+  orbBottomLeft: {
+    bottom: -80,
+    left: -80,
+  },
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: 24,
+    padding: 22,
+    zIndex: 1,
   },
   headerBlock: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 28,
     paddingHorizontal: 12,
   },
   logoIconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
+    width: 68,
+    height: 68,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+    borderWidth: 1.5,
+    marginBottom: 14,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
   brandTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    letterSpacing: -0.5,
-    marginBottom: 8,
+    fontSize: 30,
+    fontWeight: '900',
+    letterSpacing: -0.8,
+    marginBottom: 6,
   },
   brandSubtitle: {
-    fontSize: 14,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  formCard: {
-    borderRadius: 20,
-  },
-  formTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  formSubtitle: {
-    fontSize: 14,
-    marginBottom: 20,
-  },
-  errorBox: {
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 16,
-  },
-  errorText: {
     fontSize: 13,
     fontWeight: '500',
+    textAlign: 'center',
+    letterSpacing: 0.2,
+  },
+  formCard: {
+    borderRadius: 24,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  cardHeader: {
+    marginBottom: 16,
+  },
+  formTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    marginBottom: 4,
+    letterSpacing: -0.4,
+  },
+  formSubtitle: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  statusBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  statusIcon: {
+    marginRight: 10,
+  },
+  statusText: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '600',
+    lineHeight: 16,
   },
   inputGroup: {
-    marginBottom: 18,
+    marginBottom: 15,
   },
   passwordHeader: {
     flexDirection: 'row',
@@ -197,46 +456,105 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 6,
   },
+  forgotBtn: {
+    paddingVertical: 2,
+  },
   forgotText: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 12,
+    fontWeight: '700',
   },
   inputLabel: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 12,
+    fontWeight: '700',
     marginBottom: 6,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 12,
+    borderWidth: 1.5,
+    borderRadius: 14,
     paddingHorizontal: 14,
-    height: 48,
+    height: 50,
   },
   inputIcon: {
     marginRight: 10,
   },
   textInput: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 14,
+    fontWeight: '500',
     height: '100%',
   },
+  eyeBtn: {
+    padding: 6,
+  },
+  errorLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 4,
+    marginLeft: 2,
+  },
   actionBtn: {
-    marginTop: 8,
+    marginTop: 10,
     width: '100%',
+    height: 50,
+  },
+  dividerBlock: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 20,
+    width: '100%',
+  },
+  dividerLine: {
+    height: 1,
+    width: '100%',
+  },
+  dividerText: {
+    position: 'absolute',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+    paddingHorizontal: 12,
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  socialBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderRadius: 14,
+    height: 46,
+    marginHorizontal: 6,
+  },
+  socialBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
   },
   footerOptions: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 24,
+    marginTop: 22,
   },
   footerText: {
-    fontSize: 14,
+    fontSize: 13,
+    fontWeight: '500',
   },
   footerLink: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  legalText: {
+    fontSize: 11,
+    textAlign: 'center',
+    marginTop: 20,
+    lineHeight: 16,
+    paddingHorizontal: 12,
   },
 });

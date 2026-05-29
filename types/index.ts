@@ -11,6 +11,7 @@ export interface User {
   isStudentVerified: boolean;
   avatarUrl?: string;
   createdAt: string;
+  role?: string;
 }
 
 export interface AuthResponse {
