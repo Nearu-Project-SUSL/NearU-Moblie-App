@@ -8,11 +8,12 @@ import {
   useColorScheme, 
   ViewStyle, 
   TextStyle,
-  StyleProp
+  StyleProp,
+  AccessibilityProps
 } from 'react-native';
 import { Colors } from '../constants/Colors';
 
-interface ButtonProps {
+interface ButtonProps extends AccessibilityProps {
   onPress: () => void;
   title: string;
   variant?: 'primary' | 'secondary' | 'outline' | 'danger';
@@ -34,6 +35,7 @@ export const Button: React.FC<ButtonProps> = ({
   style,
   textStyle,
   icon,
+  ...accessibilityProps
 }) => {
   const systemTheme = useColorScheme() ?? 'light';
   const themeColors = Colors[systemTheme];
@@ -140,6 +142,7 @@ export const Button: React.FC<ButtonProps> = ({
           (disabled || loading) && styles.disabled,
           style,
         ]}
+        {...accessibilityProps}
       >
         {loading ? (
           <ActivityIndicator 
