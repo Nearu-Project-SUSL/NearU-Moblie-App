@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   StyleSheet, 
   View, 
@@ -10,13 +10,14 @@ import {
   Platform, 
   ScrollView,
   StatusBar,
-  Dimensions
+  Animated
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../hooks/useAuth';
 import { Colors } from '../../constants/Colors';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
+import { HapticService } from '../../services/HapticService';
 import { 
   GraduationCap, 
   Building2, 
@@ -38,8 +39,6 @@ import {
   Briefcase
 } from 'lucide-react-native';
 
-const { width } = Dimensions.get('window');
-
 type UserType = 'student' | 'business' | 'rider';
 type StudentStep = 0 | 1 | 2;
 
@@ -57,6 +56,43 @@ export default function RegisterScreen() {
   // Password visibility
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Performance: Native-Thread Pulsating Background Animations
+  const orb1Scale = useRef(new Animated.Value(1)).current;
+  const orb2Scale = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    const createOrbAnimation = (value: Animated.Value, toValue: number, duration: number) => {
+      return Animated.loop(
+        Animated.sequence([
+          Animated.timing(value, {
+            toValue: toValue,
+            duration: duration,
+            useNativeDriver: true,
+          }),
+          Animated.timing(value, {
+            toValue: 1,
+            duration: duration,
+            useNativeDriver: true,
+          })
+        ])
+      );
+    };
+
+    const anim1 = createOrbAnimation(orb1Scale, 1.15, 7000);
+    const anim2 = createOrbAnimation(orb2Scale, 1.20, 8500);
+
+    anim1.start();
+    const delayTimer = setTimeout(() => {
+      anim2.start();
+    }, 1500);
+
+    return () => {
+      anim1.stop();
+      anim2.stop();
+      clearTimeout(delayTimer);
+    };
+  }, []);
 
   // Dropdown option sets
   const faculties = ['Computing', 'Engineering', 'Management', 'Social Sciences', 'Applied Sciences'];
@@ -113,6 +149,56 @@ export default function RegisterScreen() {
     return reg.test(text);
   };
 
+  // Password strength algorithm
+  const getPasswordStrength = (password: string) => {
+    if (!password) return { score: 0, label: '', color: 'transparent' };
+    let score = 0;
+    if (password.length >= 6) score += 1;
+    if (password.length >= 10) score += 1;
+    if (/[A-Z]/.test(password)) score += 1;
+    if (/[0-9]/.test(password)) score += 1;
+    if (/[^A-Za-z0-9]/.test(password)) score += 1;
+
+    switch (score) {
+      case 0:
+      case 1:
+      case 2:
+        return { score, label: 'Weak Password', color: '#EF4444' };
+      case 3:
+      case 4:
+        return { score, label: 'Good Password', color: '#FBBF24' };
+      case 5:
+      default:
+        return { score, label: 'Excellent Password', color: '#10B981' };
+    }
+  };
+
+  const renderPasswordStrength = (passwordVal: string) => {
+    const strength = getPasswordStrength(passwordVal);
+    if (!passwordVal) return null;
+    return (
+      <View style={styles.strengthContainer} accessible={true} accessibilityLabel={`Password Strength: ${strength.label}`}>
+        <View style={styles.strengthBarRow}>
+          {[1, 2, 3].map((barIdx) => {
+            const isActive = barIdx === 1 || (barIdx === 2 && strength.score >= 3) || (barIdx === 3 && strength.score === 5);
+            return (
+              <View 
+                key={barIdx} 
+                style={[
+                  styles.strengthBar, 
+                  { 
+                    backgroundColor: isActive ? strength.color : (isDark ? 'rgba(148, 163, 184, 0.15)' : '#E2E8F0') 
+                  }
+                ]} 
+              />
+            );
+          })}
+        </View>
+        <Text style={[styles.strengthText, { color: strength.color }]}>{strength.label}</Text>
+      </View>
+    );
+  };
+
   const handleNext = () => {
     const newErrors: Record<string, string | null> = {};
 
@@ -137,15 +223,18 @@ export default function RegisterScreen() {
     }
 
     if (Object.keys(newErrors).length > 0) {
+      HapticService.triggerError();
       setErrors(newErrors);
       return;
     }
 
     setErrors({});
+    HapticService.triggerSelection();
     setActiveStep((prev) => (prev + 1) as StudentStep);
   };
 
   const handleBack = () => {
+    HapticService.triggerSelection();
     setActiveStep((prev) => (prev - 1) as StudentStep);
   };
 
@@ -156,15 +245,18 @@ export default function RegisterScreen() {
     if (!studentForm.dateOfBirth) newErrors.dateOfBirth = 'Date of birth is required';
 
     if (Object.keys(newErrors).length > 0) {
+      HapticService.triggerError();
       setErrors(newErrors);
       return;
     }
 
     setErrors({});
     setStatusMsg(null);
+    HapticService.triggerTap();
     const result = await registerStudent(studentForm);
 
     if (result.success) {
+      HapticService.triggerSuccess();
       if (result.error) {
         setStatusMsg({ text: result.error, type: 'warning' });
         setTimeout(() => router.replace('/(tabs)/browse'), 2000);
@@ -173,6 +265,7 @@ export default function RegisterScreen() {
         setTimeout(() => router.replace('/(tabs)/browse'), 1000);
       }
     } else {
+      HapticService.triggerError();
       setStatusMsg({ text: result.error || 'Student registration failed.', type: 'error' });
     }
   };
@@ -200,15 +293,18 @@ export default function RegisterScreen() {
     if (!businessForm.registrationNumber) newErrors.registrationNumber = 'Registration number is required';
 
     if (Object.keys(newErrors).length > 0) {
+      HapticService.triggerError();
       setErrors(newErrors);
       return;
     }
 
     setErrors({});
     setStatusMsg(null);
+    HapticService.triggerTap();
     const result = await registerBusiness(businessForm);
 
     if (result.success) {
+      HapticService.triggerSuccess();
       if (result.error) {
         setStatusMsg({ text: result.error, type: 'warning' });
         setTimeout(() => router.replace('/(tabs)/browse'), 2000);
@@ -217,6 +313,7 @@ export default function RegisterScreen() {
         setTimeout(() => router.replace('/(tabs)/browse'), 1000);
       }
     } else {
+      HapticService.triggerError();
       setStatusMsg({ text: result.error || 'Business registration failed.', type: 'error' });
     }
   };
@@ -243,15 +340,18 @@ export default function RegisterScreen() {
     if (!riderForm.address) newErrors.address = 'Address is required';
 
     if (Object.keys(newErrors).length > 0) {
+      HapticService.triggerError();
       setErrors(newErrors);
       return;
     }
 
     setErrors({});
     setStatusMsg(null);
+    HapticService.triggerTap();
     const result = await registerRider(riderForm);
 
     if (result.success) {
+      HapticService.triggerSuccess();
       if (result.error) {
         setStatusMsg({ text: result.error, type: 'warning' });
         setTimeout(() => router.replace('/(tabs)/browse'), 2000);
@@ -260,6 +360,7 @@ export default function RegisterScreen() {
         setTimeout(() => router.replace('/(tabs)/browse'), 1000);
       }
     } else {
+      HapticService.triggerError();
       setStatusMsg({ text: result.error || 'Rider registration failed.', type: 'error' });
     }
   };
@@ -271,10 +372,24 @@ export default function RegisterScreen() {
     >
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       
-      {/* Background glowing orbs */}
+      {/* 60FPS Pulsating Background Orbs */}
       <View style={styles.backgroundContainer} pointerEvents="none">
-        <View style={[styles.glowingOrb, styles.orbTopRight, { backgroundColor: isDark ? 'rgba(59, 130, 246, 0.12)' : 'rgba(37, 99, 235, 0.08)' }]} />
-        <View style={[styles.glowingOrb, styles.orbBottomLeft, { backgroundColor: isDark ? 'rgba(46, 158, 191, 0.15)' : 'rgba(46, 158, 191, 0.08)' }]} />
+        <Animated.View style={[
+          styles.glowingOrb, 
+          styles.orbTopRight, 
+          { 
+            backgroundColor: isDark ? 'rgba(59, 130, 246, 0.11)' : 'rgba(37, 99, 235, 0.08)',
+            transform: [{ scale: orb1Scale }] 
+          }
+        ]} />
+        <Animated.View style={[
+          styles.glowingOrb, 
+          styles.orbBottomLeft, 
+          { 
+            backgroundColor: isDark ? 'rgba(46, 158, 191, 0.13)' : 'rgba(46, 158, 191, 0.07)',
+            transform: [{ scale: orb2Scale }] 
+          }
+        ]} />
       </View>
 
       <ScrollView 
@@ -283,7 +398,17 @@ export default function RegisterScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Back Button */}
-        <Pressable onPress={() => router.back()} style={styles.backBtn}>
+        <Pressable 
+          onPress={() => {
+            HapticService.triggerSelection();
+            router.back();
+          }} 
+          style={styles.backBtn}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel="Back link button"
+          accessibilityHint="Double tap to navigate back to login screen."
+        >
           <ArrowLeft size={16} color={themeColors.text} />
           <Text style={[styles.backText, { color: themeColors.text }]}>Back to Login</Text>
         </Pressable>
@@ -306,6 +431,7 @@ export default function RegisterScreen() {
             <Pressable
               key={item.type}
               onPress={() => {
+                HapticService.triggerSelection();
                 setUserType(item.type as UserType);
                 setStatusMsg(null);
                 setErrors({});
@@ -317,6 +443,10 @@ export default function RegisterScreen() {
                   backgroundColor: userType === item.type ? (isDark ? 'rgba(46, 158, 191, 0.1)' : 'rgba(37, 99, 235, 0.06)') : (isDark ? 'rgba(15, 23, 42, 0.5)' : '#FFFFFF'),
                 }
               ]}
+              accessible={true}
+              accessibilityRole="tab"
+              accessibilityLabel={`${item.label} registration selector`}
+              accessibilityState={{ selected: userType === item.type }}
             >
               <View style={[
                 styles.roleIconBg,
@@ -342,14 +472,19 @@ export default function RegisterScreen() {
         >
           {/* Status Message Display */}
           {statusMsg && (
-            <View style={[
-              styles.statusBox, 
-              { 
-                backgroundColor: statusMsg.type === 'error' ? themeColors.dangerLight : 
-                                statusMsg.type === 'warning' ? themeColors.warningLight : 
-                                themeColors.successLight 
-              }
-            ]}>
+            <View 
+              style={[
+                styles.statusBox, 
+                { 
+                  backgroundColor: statusMsg.type === 'error' ? themeColors.dangerLight : 
+                                  statusMsg.type === 'warning' ? themeColors.warningLight : 
+                                  themeColors.successLight 
+                }
+              ]}
+              accessible={true}
+              accessibilityRole="alert"
+              accessibilityLabel={`Registration Alert: ${statusMsg.text}`}
+            >
               <AlertCircle size={16} color={
                 statusMsg.type === 'error' ? themeColors.danger : 
                 statusMsg.type === 'warning' ? themeColors.warning : 
@@ -372,7 +507,7 @@ export default function RegisterScreen() {
           {userType === 'student' && (
             <View>
               {/* Stepper Dots */}
-              <View style={styles.stepperContainer}>
+              <View style={styles.stepperContainer} accessible={true} accessibilityLabel={`Registration Step ${activeStep + 1} of 3`}>
                 {['Basic Info', 'Personal', 'Additional'].map((stepLabel, idx) => (
                   <View key={idx} style={styles.stepIndicatorItem}>
                     <View style={[
@@ -385,6 +520,13 @@ export default function RegisterScreen() {
                   </View>
                 ))}
               </View>
+
+              {/* Onboarding wizard helper caption */}
+              <Text style={[styles.onboardingHintText, { color: themeColors.textSecondary }]}>
+                {activeStep === 0 ? 'Enter your full name and choose a strong password to secure your student portal.' :
+                 activeStep === 1 ? 'Select your faculty and year to unlock peer discount catalogs and course printing.' :
+                 'Provide your delivery address and city for secure camp drop-offs.'}
+              </Text>
 
               {/* Step 1: Basic Info */}
               {activeStep === 0 && (
@@ -399,6 +541,8 @@ export default function RegisterScreen() {
                         placeholder="Alex Mercer"
                         placeholderTextColor={themeColors.textMuted}
                         style={[styles.textInput, { color: themeColors.text }]}
+                        accessible={true}
+                        accessibilityLabel="Full Name input"
                       />
                     </View>
                     {errors.fullName && <Text style={[styles.errorLabel, { color: themeColors.danger }]}>{errors.fullName}</Text>}
@@ -416,6 +560,8 @@ export default function RegisterScreen() {
                         autoCapitalize="none"
                         keyboardType="email-address"
                         style={[styles.textInput, { color: themeColors.text }]}
+                        accessible={true}
+                        accessibilityLabel="Student Email Input"
                       />
                     </View>
                     {errors.email && <Text style={[styles.errorLabel, { color: themeColors.danger }]}>{errors.email}</Text>}
@@ -433,11 +579,20 @@ export default function RegisterScreen() {
                         secureTextEntry={!showPassword}
                         autoCapitalize="none"
                         style={[styles.textInput, { color: themeColors.text }]}
+                        accessible={true}
+                        accessibilityLabel="Register Password Input"
                       />
-                      <Pressable onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
+                      <Pressable 
+                        onPress={() => {
+                          setShowPassword(!showPassword);
+                        }} 
+                        style={styles.eyeBtn}
+                      >
                         {showPassword ? <EyeOff size={18} color={themeColors.textMuted} /> : <Eye size={18} color={themeColors.textMuted} />}
                       </Pressable>
                     </View>
+                    {/* Password Strength Meter */}
+                    {renderPasswordStrength(studentForm.password)}
                     {errors.password && <Text style={[styles.errorLabel, { color: themeColors.danger }]}>{errors.password}</Text>}
                   </View>
 
@@ -453,8 +608,15 @@ export default function RegisterScreen() {
                         secureTextEntry={!showConfirmPassword}
                         autoCapitalize="none"
                         style={[styles.textInput, { color: themeColors.text }]}
+                        accessible={true}
+                        accessibilityLabel="Confirm Password Input"
                       />
-                      <Pressable onPress={() => setShowConfirmPassword(!showConfirmPassword)} style={styles.eyeBtn}>
+                      <Pressable 
+                        onPress={() => {
+                          setShowConfirmPassword(!showConfirmPassword);
+                        }} 
+                        style={styles.eyeBtn}
+                      >
                         {showConfirmPassword ? <EyeOff size={18} color={themeColors.textMuted} /> : <Eye size={18} color={themeColors.textMuted} />}
                       </Pressable>
                     </View>
@@ -467,6 +629,9 @@ export default function RegisterScreen() {
                     icon={<ChevronRight size={18} color={isDark ? '#000000' : '#FFFFFF'} />}
                     style={[styles.actionBtn, { backgroundColor: isDark ? '#2E9EBF' : themeColors.primary }]}
                     textStyle={{ color: isDark ? '#000000' : '#FFFFFF', fontWeight: '700' }}
+                    accessible={true}
+                    accessibilityRole="button"
+                    accessibilityLabel="Next Step navigation button"
                   />
                 </View>
               )}
@@ -484,6 +649,8 @@ export default function RegisterScreen() {
                           placeholder="STU-2026-904"
                           placeholderTextColor={themeColors.textMuted}
                           style={[styles.textInput, { color: themeColors.text }]}
+                          accessible={true}
+                          accessibilityLabel="Student Card ID Input"
                         />
                       </View>
                     </View>
@@ -498,6 +665,8 @@ export default function RegisterScreen() {
                           placeholderTextColor={themeColors.textMuted}
                           keyboardType="phone-pad"
                           style={[styles.textInput, { color: themeColors.text }]}
+                          accessible={true}
+                          accessibilityLabel="Student Mobile Number Input"
                         />
                       </View>
                     </View>
@@ -508,14 +677,16 @@ export default function RegisterScreen() {
                     </Text>
                   )}
 
-                  {/* Premium grid selection for Faculty */}
+                  {/* Faculty select grids */}
                   <View style={styles.pickerSection}>
                     <Text style={[styles.pickerLabel, { color: themeColors.textSecondary }]}>Select Faculty</Text>
                     <View style={styles.pickerGrid}>
                       {faculties.map((fac) => (
                         <Pressable
                           key={fac}
-                          onPress={() => setStudentForm({...studentForm, faculty: fac})}
+                          onPress={() => {
+                            setStudentForm({...studentForm, faculty: fac});
+                          }}
                           style={[
                             styles.pickerItem,
                             { 
@@ -523,6 +694,10 @@ export default function RegisterScreen() {
                               backgroundColor: studentForm.faculty === fac ? (isDark ? 'rgba(46, 158, 191, 0.1)' : 'rgba(37, 99, 235, 0.05)') : 'transparent'
                             }
                           ]}
+                          accessible={true}
+                          accessibilityRole="checkbox"
+                          accessibilityState={{ checked: studentForm.faculty === fac }}
+                          accessibilityLabel={`Faculty option: ${fac}`}
                         >
                           <Text style={[styles.pickerItemText, { color: themeColors.text, fontWeight: studentForm.faculty === fac ? '700' : '500' }]}>
                             {fac}
@@ -532,14 +707,16 @@ export default function RegisterScreen() {
                     </View>
                   </View>
 
-                  {/* Premium horizontal selection for Academic Year */}
+                  {/* Academic Year select */}
                   <View style={styles.pickerSection}>
                     <Text style={[styles.pickerLabel, { color: themeColors.textSecondary }]}>Select Academic Year</Text>
                     <View style={styles.pickerHorizontal}>
                       {years.map((y) => (
                         <Pressable
                           key={y}
-                          onPress={() => setStudentForm({...studentForm, year: y})}
+                          onPress={() => {
+                            setStudentForm({...studentForm, year: y});
+                          }}
                           style={[
                             styles.pickerItemHorizontal,
                             { 
@@ -547,6 +724,10 @@ export default function RegisterScreen() {
                               backgroundColor: studentForm.year === y ? (isDark ? 'rgba(46, 158, 191, 0.1)' : 'rgba(37, 99, 235, 0.05)') : 'transparent'
                             }
                           ]}
+                          accessible={true}
+                          accessibilityRole="checkbox"
+                          accessibilityState={{ checked: studentForm.year === y }}
+                          accessibilityLabel={`Year option: ${y}`}
                         >
                           <Text style={[styles.pickerItemText, { color: themeColors.text, fontWeight: studentForm.year === y ? '700' : '500' }]}>
                             {y}
@@ -563,6 +744,8 @@ export default function RegisterScreen() {
                       variant="secondary"
                       icon={<ChevronLeft size={16} color={themeColors.text} />}
                       style={{ flex: 1, marginRight: 6 }}
+                      accessible={true}
+                      accessibilityLabel="Stepper back button"
                     />
                     <Button 
                       title="Next" 
@@ -570,6 +753,8 @@ export default function RegisterScreen() {
                       icon={<ChevronRight size={16} color={isDark ? '#000000' : '#FFFFFF'} />}
                       style={{ flex: 1, marginLeft: 6, backgroundColor: isDark ? '#2E9EBF' : themeColors.primary }}
                       textStyle={{ color: isDark ? '#000000' : '#FFFFFF', fontWeight: '700' }}
+                      accessible={true}
+                      accessibilityLabel="Stepper next step button"
                     />
                   </View>
                 </View>
@@ -589,6 +774,8 @@ export default function RegisterScreen() {
                         placeholderTextColor={themeColors.textMuted}
                         multiline
                         style={[styles.textInput, { color: themeColors.text, paddingTop: 8 }]}
+                        accessible={true}
+                        accessibilityLabel="Hostel Delivery Address input"
                       />
                     </View>
                     {errors.address && <Text style={[styles.errorLabel, { color: themeColors.danger }]}>{errors.address}</Text>}
@@ -604,6 +791,8 @@ export default function RegisterScreen() {
                           placeholder="Belihuloya"
                           placeholderTextColor={themeColors.textMuted}
                           style={[styles.textInput, { color: themeColors.text }]}
+                          accessible={true}
+                          accessibilityLabel="Campus City input"
                         />
                       </View>
                     </View>
@@ -617,6 +806,8 @@ export default function RegisterScreen() {
                           placeholder="YYYY-MM-DD"
                           placeholderTextColor={themeColors.textMuted}
                           style={[styles.textInput, { color: themeColors.text }]}
+                          accessible={true}
+                          accessibilityLabel="Student Date of Birth input"
                         />
                       </View>
                     </View>
@@ -634,6 +825,8 @@ export default function RegisterScreen() {
                       variant="secondary"
                       icon={<ChevronLeft size={16} color={themeColors.text} />}
                       style={{ flex: 1, marginRight: 6 }}
+                      accessible={true}
+                      accessibilityLabel="Stepper back button"
                     />
                     <Button 
                       title="Complete Register" 
@@ -642,6 +835,9 @@ export default function RegisterScreen() {
                       icon={<CheckCircle2 size={16} color="#FFFFFF" />}
                       style={{ flex: 1.3, marginLeft: 6, backgroundColor: '#10B981' }}
                       textStyle={{ color: '#FFFFFF', fontWeight: '700' }}
+                      accessible={true}
+                      accessibilityRole="button"
+                      accessibilityLabel="Final Complete Student Registration Button"
                     />
                   </View>
                 </View>
@@ -663,6 +859,8 @@ export default function RegisterScreen() {
                       placeholder="Campus Cafe"
                       placeholderTextColor={themeColors.textMuted}
                       style={[styles.textInput, { color: themeColors.text }]}
+                      accessible={true}
+                      accessibilityLabel="Business Name Input"
                     />
                   </View>
                 </View>
@@ -676,6 +874,8 @@ export default function RegisterScreen() {
                       placeholder="Jane Doe"
                       placeholderTextColor={themeColors.textMuted}
                       style={[styles.textInput, { color: themeColors.text }]}
+                      accessible={true}
+                      accessibilityLabel="Business Owner Full Name Input"
                     />
                   </View>
                 </View>
@@ -693,6 +893,8 @@ export default function RegisterScreen() {
                       placeholderTextColor={themeColors.textMuted}
                       autoCapitalize="none"
                       style={[styles.textInput, { color: themeColors.text }]}
+                      accessible={true}
+                      accessibilityLabel="Business Contact Email Input"
                     />
                   </View>
                 </View>
@@ -707,6 +909,8 @@ export default function RegisterScreen() {
                       placeholderTextColor={themeColors.textMuted}
                       keyboardType="phone-pad"
                       style={[styles.textInput, { color: themeColors.text }]}
+                      accessible={true}
+                      accessibilityLabel="Business Mobile Phone Input"
                     />
                   </View>
                 </View>
@@ -724,8 +928,11 @@ export default function RegisterScreen() {
                       secureTextEntry
                       autoCapitalize="none"
                       style={[styles.textInput, { color: themeColors.text }]}
+                      accessible={true}
+                      accessibilityLabel="Business Account Password Input"
                     />
                   </View>
+                  {renderPasswordStrength(businessForm.password)}
                 </View>
                 <View style={[styles.inputGroup, { flex: 1, marginLeft: 6 }]}>
                   <Text style={[styles.inputLabel, { color: themeColors.textSecondary }]}>Confirm</Text>
@@ -738,6 +945,8 @@ export default function RegisterScreen() {
                       secureTextEntry
                       autoCapitalize="none"
                       style={[styles.textInput, { color: themeColors.text }]}
+                      accessible={true}
+                      accessibilityLabel="Confirm Password Input"
                     />
                   </View>
                 </View>
@@ -750,7 +959,9 @@ export default function RegisterScreen() {
                   {businessTypes.map((type) => (
                     <Pressable
                       key={type}
-                      onPress={() => setBusinessForm({...businessForm, businessType: type})}
+                      onPress={() => {
+                        setBusinessForm({...businessForm, businessType: type});
+                      }}
                       style={[
                         styles.pickerItem,
                         { 
@@ -758,6 +969,10 @@ export default function RegisterScreen() {
                           backgroundColor: businessForm.businessType === type ? (isDark ? 'rgba(46, 158, 191, 0.1)' : 'rgba(37, 99, 235, 0.05)') : 'transparent'
                         }
                       ]}
+                      accessible={true}
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: businessForm.businessType === type }}
+                      accessibilityLabel={`Business Type: ${type}`}
                     >
                       <Text style={[styles.pickerItemText, { color: themeColors.text, fontWeight: businessForm.businessType === type ? '700' : '500' }]}>
                         {type}
@@ -777,6 +992,8 @@ export default function RegisterScreen() {
                     placeholder="Pambahinna Junction, Belihuloya"
                     placeholderTextColor={themeColors.textMuted}
                     style={[styles.textInput, { color: themeColors.text }]}
+                    accessible={true}
+                    accessibilityLabel="Physical Business Address Input"
                   />
                 </View>
               </View>
@@ -792,6 +1009,8 @@ export default function RegisterScreen() {
                     placeholderTextColor={themeColors.textMuted}
                     multiline
                     style={[styles.textInput, { color: themeColors.text, paddingTop: 8 }]}
+                    accessible={true}
+                    accessibilityLabel="Short Business description Input"
                   />
                 </View>
               </View>
@@ -806,6 +1025,8 @@ export default function RegisterScreen() {
                       placeholder="REG-990-213"
                       placeholderTextColor={themeColors.textMuted}
                       style={[styles.textInput, { color: themeColors.text }]}
+                      accessible={true}
+                      accessibilityLabel="Corporate Registration ID input"
                     />
                   </View>
                 </View>
@@ -818,6 +1039,8 @@ export default function RegisterScreen() {
                       placeholder="TAX-101"
                       placeholderTextColor={themeColors.textMuted}
                       style={[styles.textInput, { color: themeColors.text }]}
+                      accessible={true}
+                      accessibilityLabel="Tax Identification number input"
                     />
                   </View>
                 </View>
@@ -843,6 +1066,9 @@ export default function RegisterScreen() {
                 icon={<CheckCircle2 size={18} color="#FFFFFF" />}
                 style={[styles.actionBtn, { backgroundColor: '#10B981' }]}
                 textStyle={{ color: '#FFFFFF', fontWeight: '700' }}
+                accessible={true}
+                accessibilityRole="button"
+                accessibilityLabel="Submit Business Registration Application button"
               />
             </View>
           )}
@@ -860,6 +1086,8 @@ export default function RegisterScreen() {
                     placeholder="Alex Smith"
                     placeholderTextColor={themeColors.textMuted}
                     style={[styles.textInput, { color: themeColors.text }]}
+                    accessible={true}
+                    accessibilityLabel="Rider Full Name Input"
                   />
                 </View>
               </View>
@@ -876,6 +1104,8 @@ export default function RegisterScreen() {
                       placeholderTextColor={themeColors.textMuted}
                       autoCapitalize="none"
                       style={[styles.textInput, { color: themeColors.text }]}
+                      accessible={true}
+                      accessibilityLabel="Rider Account Email Input"
                     />
                   </View>
                 </View>
@@ -890,6 +1120,8 @@ export default function RegisterScreen() {
                       placeholderTextColor={themeColors.textMuted}
                       keyboardType="phone-pad"
                       style={[styles.textInput, { color: themeColors.text }]}
+                      accessible={true}
+                      accessibilityLabel="Rider Contact Phone Number Input"
                     />
                   </View>
                 </View>
@@ -907,8 +1139,11 @@ export default function RegisterScreen() {
                       secureTextEntry
                       autoCapitalize="none"
                       style={[styles.textInput, { color: themeColors.text }]}
+                      accessible={true}
+                      accessibilityLabel="Rider Secure Account Password Input"
                     />
                   </View>
+                  {renderPasswordStrength(riderForm.password)}
                 </View>
                 <View style={[styles.inputGroup, { flex: 1, marginLeft: 6 }]}>
                   <Text style={[styles.inputLabel, { color: themeColors.textSecondary }]}>Confirm</Text>
@@ -921,6 +1156,8 @@ export default function RegisterScreen() {
                       secureTextEntry
                       autoCapitalize="none"
                       style={[styles.textInput, { color: themeColors.text }]}
+                      accessible={true}
+                      accessibilityLabel="Confirm Password Input"
                     />
                   </View>
                 </View>
@@ -933,7 +1170,9 @@ export default function RegisterScreen() {
                   {vehicleTypes.map((type) => (
                     <Pressable
                       key={type}
-                      onPress={() => setRiderForm({...riderForm, vehicleType: type})}
+                      onPress={() => {
+                        setRiderForm({...riderForm, vehicleType: type});
+                      }}
                       style={[
                         styles.pickerItem,
                         { 
@@ -941,6 +1180,10 @@ export default function RegisterScreen() {
                           backgroundColor: riderForm.vehicleType === type ? (isDark ? 'rgba(46, 158, 191, 0.1)' : 'rgba(37, 99, 235, 0.05)') : 'transparent'
                         }
                       ]}
+                      accessible={true}
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: riderForm.vehicleType === type }}
+                      accessibilityLabel={`Vehicle type option: ${type}`}
                     >
                       <Text style={[styles.pickerItemText, { color: themeColors.text, fontWeight: riderForm.vehicleType === type ? '700' : '500' }]}>
                         {type}
@@ -960,6 +1203,8 @@ export default function RegisterScreen() {
                       placeholder="SP QA-1234"
                       placeholderTextColor={themeColors.textMuted}
                       style={[styles.textInput, { color: themeColors.text }]}
+                      accessible={true}
+                      accessibilityLabel="Vehicle License Plate number Input"
                     />
                   </View>
                 </View>
@@ -972,6 +1217,8 @@ export default function RegisterScreen() {
                       placeholder="LIC-5509-X"
                       placeholderTextColor={themeColors.textMuted}
                       style={[styles.textInput, { color: themeColors.text }]}
+                      accessible={true}
+                      accessibilityLabel="Driver License card ID input"
                     />
                   </View>
                 </View>
@@ -987,6 +1234,8 @@ export default function RegisterScreen() {
                     placeholder="Belihuloya, Sri Lanka"
                     placeholderTextColor={themeColors.textMuted}
                     style={[styles.textInput, { color: themeColors.text }]}
+                    accessible={true}
+                    accessibilityLabel="Rider Base Address location input"
                   />
                 </View>
               </View>
@@ -1010,6 +1259,9 @@ export default function RegisterScreen() {
                 icon={<CheckCircle2 size={18} color="#FFFFFF" />}
                 style={[styles.actionBtn, { backgroundColor: '#10B981' }]}
                 textStyle={{ color: '#FFFFFF', fontWeight: '700' }}
+                accessible={true}
+                accessibilityRole="button"
+                accessibilityLabel="Submit Rider Registration Application button"
               />
             </View>
           )}
@@ -1021,7 +1273,15 @@ export default function RegisterScreen() {
           <Text style={[styles.footerText, { color: themeColors.textSecondary }]}>
             Already have an account?{' '}
           </Text>
-          <Pressable onPress={() => router.push('/(auth)/login')}>
+          <Pressable 
+            onPress={() => {
+              HapticService.triggerSelection();
+              router.push('/(auth)/login');
+            }}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="Navigate to Login link"
+          >
             <Text style={[styles.footerLink, { color: isDark ? '#60A5FA' : themeColors.primary }]}>Sign In</Text>
           </Pressable>
         </View>
@@ -1147,7 +1407,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 10,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(148, 163, 184, 0.1)',
     paddingBottom: 14,
@@ -1164,6 +1424,14 @@ const styles = StyleSheet.create({
   stepLabelText: {
     fontSize: 10,
     fontWeight: '700',
+  },
+  onboardingHintText: {
+    fontSize: 11,
+    fontWeight: '600',
+    lineHeight: 16,
+    textAlign: 'center',
+    marginBottom: 16,
+    paddingHorizontal: 10,
   },
   inputGroup: {
     marginBottom: 14,
@@ -1198,6 +1466,29 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 4,
     marginLeft: 2,
+  },
+  strengthContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    paddingHorizontal: 2,
+  },
+  strengthBarRow: {
+    flexDirection: 'row',
+    flex: 1,
+    marginRight: 10,
+  },
+  strengthBar: {
+    flex: 1,
+    height: 5,
+    borderRadius: 3,
+    marginHorizontal: 2,
+  },
+  strengthText: {
+    fontSize: 10,
+    fontWeight: '800',
+    width: 90,
+    textAlign: 'right',
   },
   pickerSection: {
     marginBottom: 14,

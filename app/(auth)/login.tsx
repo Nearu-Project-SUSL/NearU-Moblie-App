@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   StyleSheet, 
   View, 
@@ -10,16 +10,15 @@ import {
   Platform, 
   ScrollView,
   StatusBar,
-  Dimensions
+  Animated
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../hooks/useAuth';
 import { Colors } from '../../constants/Colors';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
+import { HapticService } from '../../services/HapticService';
 import { KeyRound, Mail, GraduationCap, Eye, EyeOff, Sparkles, AlertCircle } from 'lucide-react-native';
-
-const { width } = Dimensions.get('window');
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -36,6 +35,43 @@ export default function LoginScreen() {
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [statusMsg, setStatusMsg] = useState<{ text: string; type: 'error' | 'warning' | 'success' } | null>(null);
+
+  // Performance: Offloaded Native-Thread Pulsating Animations
+  const orb1Scale = useRef(new Animated.Value(1)).current;
+  const orb2Scale = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    const createOrbAnimation = (value: Animated.Value, toValue: number, duration: number) => {
+      return Animated.loop(
+        Animated.sequence([
+          Animated.timing(value, {
+            toValue: toValue,
+            duration: duration,
+            useNativeDriver: true,
+          }),
+          Animated.timing(value, {
+            toValue: 1,
+            duration: duration,
+            useNativeDriver: true,
+          })
+        ])
+      );
+    };
+
+    const anim1 = createOrbAnimation(orb1Scale, 1.15, 7000);
+    const anim2 = createOrbAnimation(orb2Scale, 1.20, 8500);
+
+    anim1.start();
+    const delayTimer = setTimeout(() => {
+      anim2.start();
+    }, 1500);
+
+    return () => {
+      anim1.stop();
+      anim2.stop();
+      clearTimeout(delayTimer);
+    };
+  }, []);
 
   // Email format validator
   const validateEmail = (text: string) => {
@@ -66,14 +102,19 @@ export default function LoginScreen() {
       setPasswordError(null);
     }
 
-    if (hasError) return;
+    if (hasError) {
+      HapticService.triggerError();
+      return;
+    }
 
     setStatusMsg(null);
+    HapticService.triggerTap();
     
     // Call authentication service
     const result = await login(email, password);
     
     if (result.success) {
+      HapticService.triggerSuccess();
       if (result.error) {
         // Logged in successfully but with a warning (e.g. Mock fail-safe fallback)
         setStatusMsg({ text: result.error, type: 'warning' });
@@ -87,17 +128,19 @@ export default function LoginScreen() {
         }, 800);
       }
     } else {
+      HapticService.triggerError();
       setStatusMsg({ text: result.error || 'Authentication rejected.', type: 'error' });
     }
   };
 
   const handleGuestLogin = async () => {
+    HapticService.triggerSuccess();
     setStatusMsg({ text: 'Logging in as Guest Student...', type: 'success' });
-    // Attempt standard guest account login using mock credential triggers
     const result = await login('guest@nearu.com', 'password123');
     if (result.success) {
       router.replace('/(tabs)/browse');
     } else {
+      HapticService.triggerError();
       setStatusMsg({ text: 'Failed to access guest session.', type: 'error' });
     }
   };
@@ -119,10 +162,24 @@ export default function LoginScreen() {
     >
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       
-      {/* Premium UI Background Floating Orbs */}
+      {/* 60FPS Pulsating Background Orbs */}
       <View style={styles.backgroundContainer} pointerEvents="none">
-        <View style={[styles.glowingOrb, styles.orbTopRight, { backgroundColor: isDark ? 'rgba(59, 130, 246, 0.12)' : 'rgba(37, 99, 235, 0.08)' }]} />
-        <View style={[styles.glowingOrb, styles.orbBottomLeft, { backgroundColor: isDark ? 'rgba(46, 158, 191, 0.15)' : 'rgba(46, 158, 191, 0.08)' }]} />
+        <Animated.View style={[
+          styles.glowingOrb, 
+          styles.orbTopRight, 
+          { 
+            backgroundColor: isDark ? 'rgba(59, 130, 246, 0.11)' : 'rgba(37, 99, 235, 0.08)',
+            transform: [{ scale: orb1Scale }] 
+          }
+        ]} />
+        <Animated.View style={[
+          styles.glowingOrb, 
+          styles.orbBottomLeft, 
+          { 
+            backgroundColor: isDark ? 'rgba(46, 158, 191, 0.13)' : 'rgba(46, 158, 191, 0.07)',
+            transform: [{ scale: orb2Scale }] 
+          }
+        ]} />
       </View>
 
       <ScrollView 
@@ -132,16 +189,23 @@ export default function LoginScreen() {
       >
         {/* Brand Header */}
         <View style={styles.headerBlock}>
-          <View style={[styles.logoIconContainer, { 
-            backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : '#DBEAFE',
-            borderColor: isDark ? 'rgba(59, 130, 246, 0.3)' : 'rgba(37, 99, 235, 0.15)'
-          }]}>
+          <View 
+            style={[styles.logoIconContainer, { 
+              backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : '#DBEAFE',
+              borderColor: isDark ? 'rgba(59, 130, 246, 0.3)' : 'rgba(37, 99, 235, 0.15)'
+            }]}
+            accessible={true}
+            accessibilityRole="image"
+            accessibilityLabel="NearU Campus logo mark"
+          >
             <GraduationCap size={36} color={isDark ? '#60A5FA' : '#2563EB'} />
           </View>
           <Text style={[styles.brandTitle, { color: themeColors.text }]}>NearU</Text>
           <Text style={[styles.brandSubtitle, { color: themeColors.textSecondary }]}>
             Connecting Your Campus • One Tap Away
           </Text>
+          
+
         </View>
 
         {/* Credentials Form Card */}
@@ -164,14 +228,19 @@ export default function LoginScreen() {
 
           {/* Status Message (Toasts/Errors) */}
           {statusMsg && (
-            <View style={[
-              styles.statusBox, 
-              { 
-                backgroundColor: statusMsg.type === 'error' ? themeColors.dangerLight : 
-                                statusMsg.type === 'warning' ? themeColors.warningLight : 
-                                themeColors.successLight 
-              }
-            ]}>
+            <View 
+              style={[
+                styles.statusBox, 
+                { 
+                  backgroundColor: statusMsg.type === 'error' ? themeColors.dangerLight : 
+                                  statusMsg.type === 'warning' ? themeColors.warningLight : 
+                                  themeColors.successLight 
+                }
+              ]}
+              accessible={true}
+              accessibilityRole="alert"
+              accessibilityLabel={`Authentication status: ${statusMsg.text}`}
+            >
               <AlertCircle size={16} color={
                 statusMsg.type === 'error' ? themeColors.danger : 
                 statusMsg.type === 'warning' ? themeColors.warning : 
@@ -214,6 +283,9 @@ export default function LoginScreen() {
                 textContentType="emailAddress"
                 style={[styles.textInput, { color: themeColors.text }]}
                 editable={!isLoading}
+                accessible={true}
+                accessibilityLabel="University Email Input field"
+                accessibilityHint="Enter your registered campus email address."
               />
             </View>
             {emailError && <Text style={[styles.errorLabel, { color: themeColors.danger }]}>{emailError}</Text>}
@@ -223,7 +295,13 @@ export default function LoginScreen() {
           <View style={styles.inputGroup}>
             <View style={styles.passwordHeader}>
               <Text style={[styles.inputLabel, { color: themeColors.textSecondary }]}>Password</Text>
-              <Pressable style={styles.forgotBtn}>
+              <Pressable 
+                style={styles.forgotBtn}
+                accessible={true}
+                accessibilityRole="button"
+                accessibilityLabel="Forgot Password link"
+                accessibilityHint="Double tap to reset your login password."
+              >
                 <Text style={[styles.forgotText, { color: isDark ? '#60A5FA' : themeColors.primary }]}>Forgot Password?</Text>
               </Pressable>
             </View>
@@ -248,8 +326,19 @@ export default function LoginScreen() {
                 textContentType="password"
                 style={[styles.textInput, { color: themeColors.text }]}
                 editable={!isLoading}
+                accessible={true}
+                accessibilityLabel="Password Input field"
+                accessibilityHint="Enter your secure password."
               />
-              <Pressable onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
+              <Pressable 
+                onPress={() => {
+                  setShowPassword(!showPassword);
+                }} 
+                style={styles.eyeBtn}
+                accessible={true}
+                accessibilityRole="button"
+                accessibilityLabel={showPassword ? "Hide password text" : "Reveal password text"}
+              >
                 {showPassword ? (
                   <EyeOff size={18} color={themeColors.textMuted} />
                 ) : (
@@ -275,12 +364,18 @@ export default function LoginScreen() {
               elevation: 4
             }]}
             textStyle={{ color: isDark ? '#000000' : '#FFFFFF', fontWeight: '700' }}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="Primary Log In Button"
+            accessibilityHint="Double tap to authenticate your credentials."
           />
 
           {/* Prominent Create Account Button */}
           <Button 
             title="Create an Account" 
-            onPress={() => router.push('/(auth)/register')} 
+            onPress={() => {
+              router.push('/(auth)/register');
+            }} 
             variant="outline"
             style={[styles.actionBtn, { 
               marginTop: 12,
@@ -288,6 +383,10 @@ export default function LoginScreen() {
               borderWidth: 1.5,
             }]}
             textStyle={{ color: isDark ? '#60A5FA' : themeColors.primary, fontWeight: '700' }}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="Primary Create an Account Button"
+            accessibilityHint="Double tap to switch to user registration wizards."
           />
 
           {/* Or Divider */}
@@ -309,6 +408,9 @@ export default function LoginScreen() {
                   backgroundColor: isDark ? 'rgba(15, 23, 42, 0.4)' : '#FFFFFF' 
                 }
               ]}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel="Google Authentication button"
             >
               <Text style={[styles.socialBtnText, { color: themeColors.text }]}>Google</Text>
             </Pressable>
@@ -322,6 +424,10 @@ export default function LoginScreen() {
                   backgroundColor: isDark ? 'rgba(15, 23, 42, 0.4)' : '#FFFFFF'
                 }
               ]}
+              accessible={true}
+              accessibilityRole="button"
+              accessibilityLabel="Guest Access button"
+              accessibilityHint="Instant student preview session"
             >
               <Sparkles size={14} color={isDark ? '#60A5FA' : themeColors.primary} style={{ marginRight: 6 }} />
               <Text style={[styles.socialBtnText, { color: themeColors.text }]}>Guest</Text>
@@ -335,7 +441,14 @@ export default function LoginScreen() {
           <Text style={[styles.footerText, { color: themeColors.textSecondary }]}>
             New to NearU?{' '}
           </Text>
-          <Pressable onPress={() => router.push('/(auth)/register')}>
+          <Pressable 
+            onPress={() => {
+              router.push('/(auth)/register');
+            }}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="Create Account link text"
+          >
             <Text style={[styles.footerLink, { color: isDark ? '#60A5FA' : themeColors.primary }]}>Create an Account</Text>
           </Pressable>
         </View>
@@ -380,7 +493,7 @@ const styles = StyleSheet.create({
   },
   headerBlock: {
     alignItems: 'center',
-    marginBottom: 28,
+    marginBottom: 24,
     paddingHorizontal: 12,
   },
   logoIconContainer: {
@@ -409,6 +522,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     letterSpacing: 0.2,
   },
+
   formCard: {
     borderRadius: 24,
     shadowColor: '#000000',
