@@ -297,6 +297,10 @@ export default function LoginScreen() {
             <View style={styles.passwordHeader}>
               <Text style={[styles.inputLabel, { color: themeColors.textSecondary }]}>Password</Text>
               <Pressable 
+                onPress={() => {
+                  HapticService.triggerSelection();
+                  router.push('/(auth)/forgot');
+                }}
                 style={styles.forgotBtn}
                 accessible={true}
                 accessibilityRole="button"
