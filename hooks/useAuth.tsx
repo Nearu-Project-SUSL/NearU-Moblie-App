@@ -8,6 +8,7 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isSessionLoading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   register: (firstName: string, lastName: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   registerStudent: (data: any) => Promise<{ success: boolean; error?: string }>;
@@ -32,7 +33,8 @@ const parseUsername = (username: string) => {
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isSessionLoading, setIsSessionLoading] = useState<boolean>(true);
 
   // Load session from SecureStore on startup
   useEffect(() => {
@@ -49,7 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (err) {
         console.error('Failed to restore active session:', err);
       } finally {
-        setIsLoading(false);
+        setIsSessionLoading(false);
       }
     };
     loadSession();
@@ -400,6 +402,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user,
         isAuthenticated: !!user,
         isLoading,
+        isSessionLoading,
         login,
         register,
         registerStudent,

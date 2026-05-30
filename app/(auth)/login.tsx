@@ -23,7 +23,7 @@ import { KeyRound, Mail, GraduationCap, Eye, EyeOff, Sparkles, AlertCircle, User
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { login, isLoading } = useAuth();
+  const { login } = useAuth();
   const systemTheme = useColorScheme() ?? 'dark'; // Fallback to dark for premium look
   const themeColors = Colors[systemTheme];
   const isDark = systemTheme === 'dark';
@@ -36,6 +36,10 @@ export default function LoginScreen() {
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [statusMsg, setStatusMsg] = useState<{ text: string; type: 'error' | 'warning' | 'success' } | null>(null);
+
+  // Local interaction loaders and active focused glows
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [focusedField, setFocusedField] = useState<'email' | 'password' | null>(null);
 
   // Performance: Offloaded Native-Thread Pulsating Animations
   const orb1Scale = useRef(new Animated.Value(1)).current;
@@ -110,9 +114,11 @@ export default function LoginScreen() {
 
     setStatusMsg(null);
     HapticService.triggerTap();
+    setIsSubmitting(true);
     
     // Call authentication service
     const result = await login(email, password);
+    setIsSubmitting(false);
     
     if (result.success) {
       HapticService.triggerSuccess();
@@ -137,7 +143,9 @@ export default function LoginScreen() {
   const handleGuestLogin = async () => {
     HapticService.triggerSuccess();
     setStatusMsg({ text: 'Logging in as Guest Student...', type: 'success' });
+    setIsSubmitting(true);
     const result = await login('guest@nearu.com', 'password123');
+    setIsSubmitting(false);
     if (result.success) {
       router.replace('/(tabs)/browse');
     } else {
@@ -266,24 +274,33 @@ export default function LoginScreen() {
             <View style={[
               styles.inputWrapper, 
               { 
-                borderColor: emailError ? themeColors.danger : isDark ? 'rgba(46, 158, 191, 0.2)' : themeColors.border, 
-                backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#F8FAFC' 
+                borderColor: emailError ? themeColors.danger : 
+                             focusedField === 'email' ? (isDark ? '#2E9EBF' : themeColors.primary) :
+                             isDark ? 'rgba(46, 158, 191, 0.2)' : themeColors.border, 
+                backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#F8FAFC',
+                shadowColor: focusedField === 'email' ? (isDark ? '#2E9EBF' : themeColors.primary) : 'transparent',
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: focusedField === 'email' ? 0.35 : 0,
+                shadowRadius: 8,
+                elevation: focusedField === 'email' ? 2 : 0,
               }
             ]}>
-              <Mail size={18} color={emailError ? themeColors.danger : themeColors.textMuted} style={styles.inputIcon} />
+              <Mail size={18} color={emailError ? themeColors.danger : focusedField === 'email' ? (isDark ? '#2E9EBF' : themeColors.primary) : themeColors.textMuted} style={styles.inputIcon} />
               <TextInput
                 value={email}
                 onChangeText={(text) => {
                   setEmail(text);
                   if (emailError) setEmailError(null);
                 }}
+                onFocus={() => setFocusedField('email')}
+                onBlur={() => setFocusedField(null)}
                 placeholder="student@sab.lk"
                 placeholderTextColor={themeColors.textMuted}
                 autoCapitalize="none"
                 keyboardType="email-address"
                 textContentType="emailAddress"
                 style={[styles.textInput, { color: themeColors.text }]}
-                editable={!isLoading}
+                editable={!isSubmitting}
                 accessible={true}
                 accessibilityLabel="University Email Input field"
                 accessibilityHint="Enter your registered campus email address."
@@ -313,24 +330,33 @@ export default function LoginScreen() {
             <View style={[
               styles.inputWrapper, 
               { 
-                borderColor: passwordError ? themeColors.danger : isDark ? 'rgba(46, 158, 191, 0.2)' : themeColors.border, 
-                backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#F8FAFC' 
+                borderColor: passwordError ? themeColors.danger : 
+                             focusedField === 'password' ? (isDark ? '#2E9EBF' : themeColors.primary) :
+                             isDark ? 'rgba(46, 158, 191, 0.2)' : themeColors.border, 
+                backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#F8FAFC',
+                shadowColor: focusedField === 'password' ? (isDark ? '#2E9EBF' : themeColors.primary) : 'transparent',
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: focusedField === 'password' ? 0.35 : 0,
+                shadowRadius: 8,
+                elevation: focusedField === 'password' ? 2 : 0,
               }
             ]}>
-              <KeyRound size={18} color={passwordError ? themeColors.danger : themeColors.textMuted} style={styles.inputIcon} />
+              <KeyRound size={18} color={passwordError ? themeColors.danger : focusedField === 'password' ? (isDark ? '#2E9EBF' : themeColors.primary) : themeColors.textMuted} style={styles.inputIcon} />
               <TextInput
                 value={password}
                 onChangeText={(text) => {
                   setPassword(text);
                   if (passwordError) setPasswordError(null);
                 }}
+                onFocus={() => setFocusedField('password')}
+                onBlur={() => setFocusedField(null)}
                 placeholder="Enter password"
                 placeholderTextColor={themeColors.textMuted}
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 textContentType="password"
                 style={[styles.textInput, { color: themeColors.text }]}
-                editable={!isLoading}
+                editable={!isSubmitting}
                 accessible={true}
                 accessibilityLabel="Password Input field"
                 accessibilityHint="Enter your secure password."
@@ -358,7 +384,7 @@ export default function LoginScreen() {
           <Button 
             title="Log In" 
             onPress={handleLogin} 
-            loading={isLoading}
+            loading={isSubmitting}
             variant="primary"
             style={[styles.actionBtn, { 
               backgroundColor: isDark ? '#2E9EBF' : themeColors.primary,

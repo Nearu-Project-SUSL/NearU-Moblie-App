@@ -44,7 +44,7 @@ type StudentStep = 0 | 1 | 2;
 
 export default function RegisterScreen() {
   const router = useRouter();
-  const { registerStudent, registerBusiness, registerRider, isLoading } = useAuth();
+  const { registerStudent, registerBusiness, registerRider } = useAuth();
   const systemTheme = useColorScheme() ?? 'dark';
   const themeColors = Colors[systemTheme];
   const isDark = systemTheme === 'dark';
@@ -52,6 +52,10 @@ export default function RegisterScreen() {
   const [userType, setUserType] = useState<UserType>('student');
   const [activeStep, setActiveStep] = useState<StudentStep>(0);
   const [statusMsg, setStatusMsg] = useState<{ text: string; type: 'error' | 'warning' | 'success' } | null>(null);
+
+  // Local interaction loaders and active focused glows
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
 
   // Password visibility
   const [showPassword, setShowPassword] = useState(false);
@@ -199,6 +203,30 @@ export default function RegisterScreen() {
     );
   };
 
+  const getInputWrapperStyle = (fieldName: string, hasError: any) => {
+    const isFocused = focusedField === fieldName;
+    return [
+      styles.inputWrapper,
+      {
+        borderColor: hasError ? themeColors.danger : 
+                     isFocused ? (isDark ? '#2E9EBF' : themeColors.primary) :
+                     isDark ? 'rgba(46, 158, 191, 0.2)' : themeColors.border,
+        backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#F8FAFC',
+        shadowColor: isFocused ? (isDark ? '#2E9EBF' : themeColors.primary) : 'transparent',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: isFocused ? 0.35 : 0,
+        shadowRadius: 8,
+        elevation: isFocused ? 2 : 0,
+      }
+    ];
+  };
+
+  const getIconColor = (fieldName: string, hasError: any) => {
+    if (hasError) return themeColors.danger;
+    if (focusedField === fieldName) return isDark ? '#2E9EBF' : themeColors.primary;
+    return themeColors.textMuted;
+  };
+
   const handleNext = () => {
     const newErrors: Record<string, string | null> = {};
 
@@ -253,7 +281,10 @@ export default function RegisterScreen() {
     setErrors({});
     setStatusMsg(null);
     HapticService.triggerTap();
+    setIsSubmitting(true);
+    
     const result = await registerStudent(studentForm);
+    setIsSubmitting(false);
 
     if (result.success) {
       HapticService.triggerSuccess();
@@ -301,7 +332,10 @@ export default function RegisterScreen() {
     setErrors({});
     setStatusMsg(null);
     HapticService.triggerTap();
+    setIsSubmitting(true);
+    
     const result = await registerBusiness(businessForm);
+    setIsSubmitting(false);
 
     if (result.success) {
       HapticService.triggerSuccess();
@@ -348,7 +382,10 @@ export default function RegisterScreen() {
     setErrors({});
     setStatusMsg(null);
     HapticService.triggerTap();
+    setIsSubmitting(true);
+    
     const result = await registerRider(riderForm);
+    setIsSubmitting(false);
 
     if (result.success) {
       HapticService.triggerSuccess();
@@ -533,11 +570,13 @@ export default function RegisterScreen() {
                 <View>
                   <View style={styles.inputGroup}>
                     <Text style={[styles.inputLabel, { color: themeColors.textSecondary }]}>Full Name</Text>
-                    <View style={[styles.inputWrapper, { borderColor: errors.fullName ? themeColors.danger : isDark ? 'rgba(46, 158, 191, 0.2)' : themeColors.border, backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#F8FAFC' }]}>
-                      <UserIcon size={18} color={themeColors.textMuted} style={styles.inputIcon} />
+                    <View style={getInputWrapperStyle('student_fullName', errors.fullName)}>
+                      <UserIcon size={18} color={getIconColor('student_fullName', errors.fullName)} style={styles.inputIcon} />
                       <TextInput
                         value={studentForm.fullName}
                         onChangeText={(t) => setStudentForm({...studentForm, fullName: t})}
+                        onFocus={() => setFocusedField('student_fullName')}
+                        onBlur={() => setFocusedField(null)}
                         placeholder="Alex Mercer"
                         placeholderTextColor={themeColors.textMuted}
                         style={[styles.textInput, { color: themeColors.text }]}
@@ -550,11 +589,13 @@ export default function RegisterScreen() {
 
                   <View style={styles.inputGroup}>
                     <Text style={[styles.inputLabel, { color: themeColors.textSecondary }]}>Email Address</Text>
-                    <View style={[styles.inputWrapper, { borderColor: errors.email ? themeColors.danger : isDark ? 'rgba(46, 158, 191, 0.2)' : themeColors.border, backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#F8FAFC' }]}>
-                      <Mail size={18} color={themeColors.textMuted} style={styles.inputIcon} />
+                    <View style={getInputWrapperStyle('student_email', errors.email)}>
+                      <Mail size={18} color={getIconColor('student_email', errors.email)} style={styles.inputIcon} />
                       <TextInput
                         value={studentForm.email}
                         onChangeText={(t) => setStudentForm({...studentForm, email: t})}
+                        onFocus={() => setFocusedField('student_email')}
+                        onBlur={() => setFocusedField(null)}
                         placeholder="student@sab.lk"
                         placeholderTextColor={themeColors.textMuted}
                         autoCapitalize="none"
@@ -569,11 +610,13 @@ export default function RegisterScreen() {
 
                   <View style={styles.inputGroup}>
                     <Text style={[styles.inputLabel, { color: themeColors.textSecondary }]}>Password</Text>
-                    <View style={[styles.inputWrapper, { borderColor: errors.password ? themeColors.danger : isDark ? 'rgba(46, 158, 191, 0.2)' : themeColors.border, backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#F8FAFC' }]}>
-                      <KeyRound size={18} color={themeColors.textMuted} style={styles.inputIcon} />
+                    <View style={getInputWrapperStyle('student_password', errors.password)}>
+                      <KeyRound size={18} color={getIconColor('student_password', errors.password)} style={styles.inputIcon} />
                       <TextInput
                         value={studentForm.password}
                         onChangeText={(t) => setStudentForm({...studentForm, password: t})}
+                        onFocus={() => setFocusedField('student_password')}
+                        onBlur={() => setFocusedField(null)}
                         placeholder="Min. 6 characters"
                         placeholderTextColor={themeColors.textMuted}
                         secureTextEntry={!showPassword}
@@ -598,11 +641,13 @@ export default function RegisterScreen() {
 
                   <View style={styles.inputGroup}>
                     <Text style={[styles.inputLabel, { color: themeColors.textSecondary }]}>Confirm Password</Text>
-                    <View style={[styles.inputWrapper, { borderColor: errors.confirmPassword ? themeColors.danger : isDark ? 'rgba(46, 158, 191, 0.2)' : themeColors.border, backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#F8FAFC' }]}>
-                      <KeyRound size={18} color={themeColors.textMuted} style={styles.inputIcon} />
+                    <View style={getInputWrapperStyle('student_confirmPassword', errors.confirmPassword)}>
+                      <KeyRound size={18} color={getIconColor('student_confirmPassword', errors.confirmPassword)} style={styles.inputIcon} />
                       <TextInput
                         value={studentForm.confirmPassword}
                         onChangeText={(t) => setStudentForm({...studentForm, confirmPassword: t})}
+                        onFocus={() => setFocusedField('student_confirmPassword')}
+                        onBlur={() => setFocusedField(null)}
                         placeholder="Re-enter password"
                         placeholderTextColor={themeColors.textMuted}
                         secureTextEntry={!showConfirmPassword}
@@ -642,10 +687,12 @@ export default function RegisterScreen() {
                   <View style={styles.row}>
                     <View style={[styles.inputGroup, { flex: 1, marginRight: 6 }]}>
                       <Text style={[styles.inputLabel, { color: themeColors.textSecondary }]}>Student ID</Text>
-                      <View style={[styles.inputWrapper, { borderColor: errors.studentId ? themeColors.danger : isDark ? 'rgba(46, 158, 191, 0.2)' : themeColors.border, backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#F8FAFC' }]}>
+                      <View style={getInputWrapperStyle('student_studentId', errors.studentId)}>
                         <TextInput
                           value={studentForm.studentId}
                           onChangeText={(t) => setStudentForm({...studentForm, studentId: t})}
+                          onFocus={() => setFocusedField('student_studentId')}
+                          onBlur={() => setFocusedField(null)}
                           placeholder="STU-2026-904"
                           placeholderTextColor={themeColors.textMuted}
                           style={[styles.textInput, { color: themeColors.text }]}
@@ -656,11 +703,13 @@ export default function RegisterScreen() {
                     </View>
                     <View style={[styles.inputGroup, { flex: 1, marginLeft: 6 }]}>
                       <Text style={[styles.inputLabel, { color: themeColors.textSecondary }]}>Phone Number</Text>
-                      <View style={[styles.inputWrapper, { borderColor: errors.phone ? themeColors.danger : isDark ? 'rgba(46, 158, 191, 0.2)' : themeColors.border, backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#F8FAFC' }]}>
-                        <Phone size={16} color={themeColors.textMuted} style={styles.inputIcon} />
+                      <View style={getInputWrapperStyle('student_phone', errors.phone)}>
+                        <Phone size={16} color={getIconColor('student_phone', errors.phone)} style={styles.inputIcon} />
                         <TextInput
                           value={studentForm.phone}
                           onChangeText={(t) => setStudentForm({...studentForm, phone: t})}
+                          onFocus={() => setFocusedField('student_phone')}
+                          onBlur={() => setFocusedField(null)}
                           placeholder="0712345678"
                           placeholderTextColor={themeColors.textMuted}
                           keyboardType="phone-pad"
@@ -831,7 +880,7 @@ export default function RegisterScreen() {
                     <Button 
                       title="Complete Register" 
                       onPress={handleStudentSubmit}
-                      loading={isLoading}
+                      loading={isSubmitting}
                       icon={<CheckCircle2 size={16} color="#FFFFFF" />}
                       style={{ flex: 1.3, marginLeft: 6, backgroundColor: '#10B981' }}
                       textStyle={{ color: '#FFFFFF', fontWeight: '700' }}
@@ -1062,7 +1111,7 @@ export default function RegisterScreen() {
               <Button 
                 title="Submit Application" 
                 onPress={handleBusinessSubmit}
-                loading={isLoading}
+                loading={isSubmitting}
                 icon={<CheckCircle2 size={18} color="#FFFFFF" />}
                 style={[styles.actionBtn, { backgroundColor: '#10B981' }]}
                 textStyle={{ color: '#FFFFFF', fontWeight: '700' }}
@@ -1255,7 +1304,7 @@ export default function RegisterScreen() {
               <Button 
                 title="Submit Rider Application" 
                 onPress={handleRiderSubmit}
-                loading={isLoading}
+                loading={isSubmitting}
                 icon={<CheckCircle2 size={18} color="#FFFFFF" />}
                 style={[styles.actionBtn, { backgroundColor: '#10B981' }]}
                 textStyle={{ color: '#FFFFFF', fontWeight: '700' }}

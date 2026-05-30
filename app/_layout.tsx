@@ -7,17 +7,18 @@ import { AuthProvider, useAuth } from '../hooks/useAuth';
 import { Colors } from '../constants/Colors';
 
 function RootNavigationLayout() {
-  const { isAuthenticated, isLoading } = useAuth();
-  const segments = useSegments();
+  const { isAuthenticated, isSessionLoading } = useAuth();
+  const segments = useSegments() as string[];
   const router = useRouter();
   const systemTheme = useColorScheme() ?? 'light';
   const themeColors = Colors[systemTheme];
 
   // Route protection gate handler
   useEffect(() => {
-    if (isLoading) return;
+    if (isSessionLoading) return;
+    if (segments.length === 0) return; // Guard against uninitialized transient router states
 
-    const inAuthGroup = segments[0] === '(auth)';
+    const inAuthGroup = segments.includes('(auth)');
 
     if (!isAuthenticated && !inAuthGroup) {
       // Direct unauthorized users strictly to login
@@ -26,9 +27,9 @@ function RootNavigationLayout() {
       // Redirect logged-in users directly to Browse tab dashboard
       router.replace('/(tabs)/browse');
     }
-  }, [isAuthenticated, isLoading, segments]);
+  }, [isAuthenticated, isSessionLoading, segments]);
 
-  if (isLoading) {
+  if (isSessionLoading) {
     return (
       <View style={[styles.loadingScreen, { backgroundColor: themeColors.background }]}>
         <ActivityIndicator size="large" color={themeColors.primary} />
