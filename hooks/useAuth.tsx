@@ -22,6 +22,21 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Utility to determine if a failed request is due to the backend being offline/unreachable
+const isBackendOffline = (res: any) => {
+  if (!__DEV__) return false;
+  const offlineMessages = [
+    'network error',
+    'timeout',
+    'enotfound',
+    'econnrefused',
+    'network request failed',
+    'api request failed'
+  ];
+  const msg = (res.message || '').toLowerCase();
+  return offlineMessages.some(m => msg.includes(m)) || !res.message;
+};
+
 // Utility to parse username into firstName and lastName
 const parseUsername = (username: string) => {
   const parts = (username || '').trim().split(/\s+/);
@@ -95,35 +110,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
 
-      // If backend is unreachable/offline (e.g. timeout or connection error),
-      // we trigger our Mock Fail-safe Mode so the user can test the app offline.
-      console.warn('Live backend auth failed or offline. Invoking elegant mock fail-safe mode.');
-      
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      if (email.includes('@') && password.length >= 6) {
-        const mockUser: User = {
-          id: 'user_98371',
-          email: email.toLowerCase(),
-          firstName: email.split('@')[0].toUpperCase(),
-          lastName: 'STUDENT',
-          isStudentVerified: true,
-          studentIdCardNumber: 'STU-2026-904',
-          avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=256&auto=format&fit=crop',
-          createdAt: new Date().toISOString(),
-          role: 'Student'
-        };
+      // Gated Mock Fail-safe Mode: Only invoke in development when the backend is offline/unreachable.
+      if (__DEV__ && isBackendOffline(res)) {
+        console.warn('Live backend auth offline. Invoking mock fail-safe mode.');
         
-        setUser(mockUser);
-        setStoredTokens('mock_jwt_access_token', 'mock_jwt_refresh_token');
-        await SecureStore.setItemAsync('authToken', 'mock_jwt_access_token');
-        await SecureStore.setItemAsync('userData', JSON.stringify(mockUser));
-        
-        setIsLoading(false);
-        // Include warning to display in toast
-        return { 
-          success: true, 
-          error: res.message ? `Live server offline. Logged in via mock fail-safe: ${res.message}` : undefined 
-        };
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        if (email.includes('@') && password.length >= 6) {
+          const mockUser: User = {
+            id: 'user_98371',
+            email: email.toLowerCase(),
+            firstName: email.split('@')[0].toUpperCase(),
+            lastName: 'STUDENT',
+            isStudentVerified: true,
+            studentIdCardNumber: 'STU-2026-904',
+            avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=256&auto=format&fit=crop',
+            createdAt: new Date().toISOString(),
+            role: 'Student'
+          };
+          
+          setUser(mockUser);
+          setStoredTokens('mock_jwt_access_token', 'mock_jwt_refresh_token');
+          await SecureStore.setItemAsync('authToken', 'mock_jwt_access_token');
+          await SecureStore.setItemAsync('userData', JSON.stringify(mockUser));
+          
+          setIsLoading(false);
+          // Include warning to display in toast
+          return { 
+            success: true, 
+            error: res.message ? `Live server offline. Logged in via mock fail-safe: ${res.message}` : undefined 
+          };
+        }
       }
       
       setIsLoading(false);
@@ -363,10 +379,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { success: true };
       }
       
-      console.warn('Live backend password reset offline. Invoking mock fail-safe forgot-password.');
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Gated Mock Fail-safe Mode: Only invoke in development when the backend is offline/unreachable.
+      if (__DEV__ && isBackendOffline(res)) {
+        console.warn('Live backend password reset offline. Invoking mock fail-safe forgot-password.');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        setIsLoading(false);
+        return { success: true };
+      }
+      
       setIsLoading(false);
-      return { success: true };
+      return { success: false, error: res.message || 'Failed to dispatch verification code.' };
     } catch (err: any) {
       setIsLoading(false);
       return { success: false, error: err.message || 'Forgot password request failed.' };
@@ -382,14 +404,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { success: true };
       }
       
-      console.warn('Live backend password reset offline. Invoking mock fail-safe reset-password.');
-      await new Promise(resolve => setTimeout(resolve, 1200));
-      if (code === '123456' || code.length === 6) {
+      // Gated Mock Fail-safe Mode: Only invoke in development when the backend is offline/unreachable.
+      if (__DEV__ && isBackendOffline(res)) {
+        console.warn('Live backend password reset offline. Invoking mock fail-safe reset-password.');
+        await new Promise(resolve => setTimeout(resolve, 1200));
+        if (code === '123456') {
+          setIsLoading(false);
+          return { success: true };
+        }
         setIsLoading(false);
-        return { success: true };
+        return { success: false, error: 'Invalid verification passcode. Use 123456.' };
       }
+      
       setIsLoading(false);
-      return { success: false, error: 'Invalid verification passcode. Use 123456.' };
+      return { success: false, error: res.message || 'Password reset failed.' };
     } catch (err: any) {
       setIsLoading(false);
       return { success: false, error: err.message || 'Password reset failed.' };

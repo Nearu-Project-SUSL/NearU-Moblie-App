@@ -59,6 +59,8 @@ export default function ForgotPasswordScreen() {
 
   // Isolated local step loader & input focus glow state
   const [isStepLoading, setIsStepLoading] = useState(false);
+  const [isOtpFocused, setIsOtpFocused] = useState(false);
+  const otpInputRef = useRef<TextInput>(null);
 
   // Pulsating Background Animations (Offloaded to Native Thread)
   const orb1Scale = useRef(new Animated.Value(1)).current;
@@ -414,32 +416,68 @@ export default function ForgotPasswordScreen() {
           {activeStep === 1 && (
             <View>
               <View style={styles.inputGroup}>
-                <Text style={[styles.inputLabel, { color: themeColors.textSecondary }]}>Verification Code</Text>
-                <View style={[
-                  styles.inputWrapper, 
-                  { 
-                    borderColor: otpError ? themeColors.danger : isDark ? 'rgba(46, 158, 191, 0.25)' : themeColors.border, 
-                    backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#F8FAFC',
-                  }
-                ]}>
-                  <Lock size={18} color={otpError ? themeColors.danger : themeColors.textMuted} style={styles.inputIcon} />
-                  <TextInput
-                    value={otpCode}
-                    onChangeText={(t) => {
-                      setOtpCode(t);
-                      if (otpError) setOtpError(null);
-                    }}
-                    placeholder="Enter 6-digit OTP (use 123456)"
-                    placeholderTextColor={themeColors.textMuted}
-                    keyboardType="number-pad"
-                    maxLength={6}
-                    style={[styles.textInput, { color: themeColors.text, letterSpacing: otpCode ? 2 : 0 }]}
-                    editable={!isStepLoading}
-                    accessible={true}
-                    accessibilityLabel="OTP Verification Passcode Input"
-                  />
-                </View>
-                {otpError && <Text style={[styles.errorLabel, { color: themeColors.danger }]}>{otpError}</Text>}
+                <Text style={[styles.inputLabel, { color: themeColors.textSecondary, marginBottom: 12 }]}>
+                  Verification Code
+                </Text>
+                
+                {/* Pressable Split OTP Container */}
+                <Pressable 
+                  onPress={() => otpInputRef.current?.focus()}
+                  style={styles.otpBoxesContainer}
+                  accessible={true}
+                  accessibilityLabel="Enter 6-digit OTP verification code"
+                >
+                  {[0, 1, 2, 3, 4, 5].map((index) => {
+                    const char = otpCode[index] || '';
+                    const isCurrent = index === otpCode.length;
+                    const hasValue = otpCode.length > index;
+                    
+                    return (
+                      <View 
+                        key={index} 
+                        style={[
+                          styles.otpBox, 
+                          { 
+                            borderColor: otpError ? themeColors.danger : 
+                                         (isCurrent && isOtpFocused) ? (isDark ? '#2E9EBF' : themeColors.primary) : 
+                                         hasValue ? (isDark ? 'rgba(46, 158, 191, 0.4)' : themeColors.primary) :
+                                         (isDark ? 'rgba(46, 158, 191, 0.15)' : themeColors.border),
+                            backgroundColor: isDark ? 'rgba(15, 23, 42, 0.55)' : '#F8FAFC',
+                          }
+                        ]}
+                      >
+                        <Text style={[styles.otpBoxText, { color: themeColors.text }]}>
+                          {char}
+                        </Text>
+                        {/* Elegant blinking indicator line for focused box */}
+                        {isCurrent && isOtpFocused && (
+                          <View style={[styles.otpCaret, { backgroundColor: isDark ? '#2E9EBF' : themeColors.primary }]} />
+                        )}
+                      </View>
+                    );
+                  })}
+                </Pressable>
+
+                {/* Completely hidden input handling Gboard autofocus, SMS codes, and full paste support */}
+                <TextInput
+                  ref={otpInputRef}
+                  value={otpCode}
+                  onChangeText={(t) => {
+                    // Only allow numeric input
+                    const numericValue = t.replace(/[^0-9]/g, '');
+                    setOtpCode(numericValue);
+                    if (otpError) setOtpError(null);
+                  }}
+                  onFocus={() => setIsOtpFocused(true)}
+                  onBlur={() => setIsOtpFocused(false)}
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  style={styles.hiddenInput}
+                  editable={!isStepLoading}
+                  textContentType="oneTimeCode"
+                />
+                
+                {otpError && <Text style={[styles.errorLabel, { color: themeColors.danger, marginTop: 8 }]}>{otpError}</Text>}
               </View>
 
               <Button 
@@ -598,6 +636,40 @@ export default function ForgotPasswordScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  otpBoxesContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginVertical: 10,
+    width: '100%',
+  },
+  otpBox: {
+    width: 44,
+    height: 52,
+    borderWidth: 1.8,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  otpBoxText: {
+    fontSize: 20,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+  otpCaret: {
+    position: 'absolute',
+    bottom: 10,
+    width: 14,
+    height: 2,
+    borderRadius: 1,
+  },
+  hiddenInput: {
+    position: 'absolute',
+    width: 1,
+    height: 1,
+    opacity: 0,
   },
   backgroundContainer: {
     ...StyleSheet.absoluteFillObject,
