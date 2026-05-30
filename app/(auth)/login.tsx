@@ -23,7 +23,7 @@ import { KeyRound, Mail, GraduationCap, Eye, EyeOff, Sparkles, AlertCircle, User
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { login, isLoading } = useAuth();
+  const { login } = useAuth();
   const systemTheme = useColorScheme() ?? 'dark'; // Fallback to dark for premium look
   const themeColors = Colors[systemTheme];
   const isDark = systemTheme === 'dark';
@@ -36,6 +36,9 @@ export default function LoginScreen() {
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [statusMsg, setStatusMsg] = useState<{ text: string; type: 'error' | 'warning' | 'success' } | null>(null);
+
+  // Local interaction loaders and active focused glows
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Performance: Offloaded Native-Thread Pulsating Animations
   const orb1Scale = useRef(new Animated.Value(1)).current;
@@ -110,9 +113,11 @@ export default function LoginScreen() {
 
     setStatusMsg(null);
     HapticService.triggerTap();
+    setIsSubmitting(true);
     
     // Call authentication service
     const result = await login(email, password);
+    setIsSubmitting(false);
     
     if (result.success) {
       HapticService.triggerSuccess();
@@ -137,7 +142,9 @@ export default function LoginScreen() {
   const handleGuestLogin = async () => {
     HapticService.triggerSuccess();
     setStatusMsg({ text: 'Logging in as Guest Student...', type: 'success' });
+    setIsSubmitting(true);
     const result = await login('guest@nearu.com', 'password123');
+    setIsSubmitting(false);
     if (result.success) {
       router.replace('/(tabs)/browse');
     } else {
@@ -158,7 +165,7 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAvoidingView 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined} 
       style={[styles.container, { backgroundColor: isDark ? '#080C14' : '#F8FAFC' }]}
     >
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
@@ -184,6 +191,7 @@ export default function LoginScreen() {
       </View>
 
       <ScrollView 
+        style={{ flex: 1, zIndex: 1 }}
         contentContainerStyle={styles.scrollContent} 
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -266,8 +274,8 @@ export default function LoginScreen() {
             <View style={[
               styles.inputWrapper, 
               { 
-                borderColor: emailError ? themeColors.danger : isDark ? 'rgba(46, 158, 191, 0.2)' : themeColors.border, 
-                backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#F8FAFC' 
+                borderColor: emailError ? themeColors.danger : isDark ? 'rgba(46, 158, 191, 0.25)' : themeColors.border, 
+                backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#F8FAFC',
               }
             ]}>
               <Mail size={18} color={emailError ? themeColors.danger : themeColors.textMuted} style={styles.inputIcon} />
@@ -283,7 +291,7 @@ export default function LoginScreen() {
                 keyboardType="email-address"
                 textContentType="emailAddress"
                 style={[styles.textInput, { color: themeColors.text }]}
-                editable={!isLoading}
+                editable={!isSubmitting}
                 accessible={true}
                 accessibilityLabel="University Email Input field"
                 accessibilityHint="Enter your registered campus email address."
@@ -297,6 +305,10 @@ export default function LoginScreen() {
             <View style={styles.passwordHeader}>
               <Text style={[styles.inputLabel, { color: themeColors.textSecondary }]}>Password</Text>
               <Pressable 
+                onPress={() => {
+                  HapticService.triggerSelection();
+                  router.push('/(auth)/forgot');
+                }}
                 style={styles.forgotBtn}
                 accessible={true}
                 accessibilityRole="button"
@@ -309,8 +321,8 @@ export default function LoginScreen() {
             <View style={[
               styles.inputWrapper, 
               { 
-                borderColor: passwordError ? themeColors.danger : isDark ? 'rgba(46, 158, 191, 0.2)' : themeColors.border, 
-                backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#F8FAFC' 
+                borderColor: passwordError ? themeColors.danger : isDark ? 'rgba(46, 158, 191, 0.25)' : themeColors.border, 
+                backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#F8FAFC',
               }
             ]}>
               <KeyRound size={18} color={passwordError ? themeColors.danger : themeColors.textMuted} style={styles.inputIcon} />
@@ -326,7 +338,7 @@ export default function LoginScreen() {
                 autoCapitalize="none"
                 textContentType="password"
                 style={[styles.textInput, { color: themeColors.text }]}
-                editable={!isLoading}
+                editable={!isSubmitting}
                 accessible={true}
                 accessibilityLabel="Password Input field"
                 accessibilityHint="Enter your secure password."
@@ -354,7 +366,7 @@ export default function LoginScreen() {
           <Button 
             title="Log In" 
             onPress={handleLogin} 
-            loading={isLoading}
+            loading={isSubmitting}
             variant="primary"
             style={[styles.actionBtn, { 
               backgroundColor: isDark ? '#2E9EBF' : themeColors.primary,

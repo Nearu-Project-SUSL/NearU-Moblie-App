@@ -12,6 +12,8 @@ export const API_ENDPOINTS = {
     LOGOUT: `${API_BASE_URL}/auth/logout`,
     REFRESH_TOKEN: `${API_BASE_URL}/auth/refresh`,
     VERIFY_STUDENT_ID: `${API_BASE_URL}/auth/verify-student`,
+    FORGOT_PASSWORD: `${API_BASE_URL}/auth/forgot-password`,
+    RESET_PASSWORD: `${API_BASE_URL}/auth/reset-password`,
   },
   
   // Student Dashboards & Service Listings
