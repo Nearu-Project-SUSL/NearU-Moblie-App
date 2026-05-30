@@ -59,7 +59,6 @@ export default function ForgotPasswordScreen() {
 
   // Isolated local step loader & input focus glow state
   const [isStepLoading, setIsStepLoading] = useState(false);
-  const [focusedField, setFocusedField] = useState<'email' | 'otpCode' | 'password' | 'confirmPassword' | null>(null);
 
   // Pulsating Background Animations (Offloaded to Native Thread)
   const orb1Scale = useRef(new Animated.Value(1)).current;
@@ -250,7 +249,7 @@ export default function ForgotPasswordScreen() {
 
   return (
     <KeyboardAvoidingView 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined} 
       style={[styles.container, { backgroundColor: isDark ? '#080C14' : '#F8FAFC' }]}
     >
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
@@ -276,6 +275,7 @@ export default function ForgotPasswordScreen() {
       </View>
 
       <ScrollView 
+        style={{ flex: 1, zIndex: 1 }}
         contentContainerStyle={styles.scrollContent} 
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -369,26 +369,17 @@ export default function ForgotPasswordScreen() {
                 <View style={[
                   styles.inputWrapper, 
                   { 
-                    borderColor: emailError ? themeColors.danger : 
-                                 focusedField === 'email' ? (isDark ? '#2E9EBF' : themeColors.primary) :
-                                 isDark ? 'rgba(46, 158, 191, 0.2)' : themeColors.border, 
+                    borderColor: emailError ? themeColors.danger : isDark ? 'rgba(46, 158, 191, 0.25)' : themeColors.border, 
                     backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#F8FAFC',
-                    shadowColor: focusedField === 'email' ? (isDark ? '#2E9EBF' : themeColors.primary) : 'transparent',
-                    shadowOffset: { width: 0, height: 0 },
-                    shadowOpacity: focusedField === 'email' ? 0.35 : 0,
-                    shadowRadius: 8,
-                    elevation: focusedField === 'email' ? 2 : 0,
                   }
                 ]}>
-                  <Mail size={18} color={emailError ? themeColors.danger : focusedField === 'email' ? (isDark ? '#2E9EBF' : themeColors.primary) : themeColors.textMuted} style={styles.inputIcon} />
+                  <Mail size={18} color={emailError ? themeColors.danger : themeColors.textMuted} style={styles.inputIcon} />
                   <TextInput
                     value={email}
                     onChangeText={(t) => {
                       setEmail(t);
                       if (emailError) setEmailError(null);
                     }}
-                    onFocus={() => setFocusedField('email')}
-                    onBlur={() => setFocusedField(null)}
                     placeholder="student@sab.lk"
                     placeholderTextColor={themeColors.textMuted}
                     autoCapitalize="none"
@@ -427,26 +418,17 @@ export default function ForgotPasswordScreen() {
                 <View style={[
                   styles.inputWrapper, 
                   { 
-                    borderColor: otpError ? themeColors.danger : 
-                                 focusedField === 'otpCode' ? (isDark ? '#2E9EBF' : themeColors.primary) :
-                                 isDark ? 'rgba(46, 158, 191, 0.2)' : themeColors.border, 
+                    borderColor: otpError ? themeColors.danger : isDark ? 'rgba(46, 158, 191, 0.25)' : themeColors.border, 
                     backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#F8FAFC',
-                    shadowColor: focusedField === 'otpCode' ? (isDark ? '#2E9EBF' : themeColors.primary) : 'transparent',
-                    shadowOffset: { width: 0, height: 0 },
-                    shadowOpacity: focusedField === 'otpCode' ? 0.35 : 0,
-                    shadowRadius: 8,
-                    elevation: focusedField === 'otpCode' ? 2 : 0,
                   }
                 ]}>
-                  <Lock size={18} color={otpError ? themeColors.danger : focusedField === 'otpCode' ? (isDark ? '#2E9EBF' : themeColors.primary) : themeColors.textMuted} style={styles.inputIcon} />
+                  <Lock size={18} color={otpError ? themeColors.danger : themeColors.textMuted} style={styles.inputIcon} />
                   <TextInput
                     value={otpCode}
                     onChangeText={(t) => {
                       setOtpCode(t);
                       if (otpError) setOtpError(null);
                     }}
-                    onFocus={() => setFocusedField('otpCode')}
-                    onBlur={() => setFocusedField(null)}
                     placeholder="Enter 6-digit OTP (use 123456)"
                     placeholderTextColor={themeColors.textMuted}
                     keyboardType="number-pad"
@@ -486,26 +468,17 @@ export default function ForgotPasswordScreen() {
                 <View style={[
                   styles.inputWrapper, 
                   { 
-                    borderColor: passwordError ? themeColors.danger : 
-                                 focusedField === 'password' ? (isDark ? '#2E9EBF' : themeColors.primary) :
-                                 isDark ? 'rgba(46, 158, 191, 0.2)' : themeColors.border, 
+                    borderColor: passwordError ? themeColors.danger : isDark ? 'rgba(46, 158, 191, 0.25)' : themeColors.border, 
                     backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#F8FAFC',
-                    shadowColor: focusedField === 'password' ? (isDark ? '#2E9EBF' : themeColors.primary) : 'transparent',
-                    shadowOffset: { width: 0, height: 0 },
-                    shadowOpacity: focusedField === 'password' ? 0.35 : 0,
-                    shadowRadius: 8,
-                    elevation: focusedField === 'password' ? 2 : 0,
                   }
                 ]}>
-                  <KeyRound size={18} color={passwordError ? themeColors.danger : focusedField === 'password' ? (isDark ? '#2E9EBF' : themeColors.primary) : themeColors.textMuted} style={styles.inputIcon} />
+                  <KeyRound size={18} color={passwordError ? themeColors.danger : themeColors.textMuted} style={styles.inputIcon} />
                   <TextInput
                     value={password}
                     onChangeText={(t) => {
                       setPassword(t);
                       if (passwordError) setPasswordError(null);
                     }}
-                    onFocus={() => setFocusedField('password')}
-                    onBlur={() => setFocusedField(null)}
                     placeholder="Enter new password"
                     placeholderTextColor={themeColors.textMuted}
                     secureTextEntry={!showPassword}
@@ -533,26 +506,17 @@ export default function ForgotPasswordScreen() {
                 <View style={[
                   styles.inputWrapper, 
                   { 
-                    borderColor: confirmPasswordError ? themeColors.danger : 
-                                 focusedField === 'confirmPassword' ? (isDark ? '#2E9EBF' : themeColors.primary) :
-                                 isDark ? 'rgba(46, 158, 191, 0.2)' : themeColors.border, 
+                    borderColor: confirmPasswordError ? themeColors.danger : isDark ? 'rgba(46, 158, 191, 0.25)' : themeColors.border, 
                     backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#F8FAFC',
-                    shadowColor: focusedField === 'confirmPassword' ? (isDark ? '#2E9EBF' : themeColors.primary) : 'transparent',
-                    shadowOffset: { width: 0, height: 0 },
-                    shadowOpacity: focusedField === 'confirmPassword' ? 0.35 : 0,
-                    shadowRadius: 8,
-                    elevation: focusedField === 'confirmPassword' ? 2 : 0,
                   }
                 ]}>
-                  <KeyRound size={18} color={confirmPasswordError ? themeColors.danger : focusedField === 'confirmPassword' ? (isDark ? '#2E9EBF' : themeColors.primary) : themeColors.textMuted} style={styles.inputIcon} />
+                  <KeyRound size={18} color={confirmPasswordError ? themeColors.danger : themeColors.textMuted} style={styles.inputIcon} />
                   <TextInput
                     value={confirmPassword}
                     onChangeText={(t) => {
                       setConfirmPassword(t);
                       if (confirmPasswordError) setConfirmPasswordError(null);
                     }}
-                    onFocus={() => setFocusedField('confirmPassword')}
-                    onBlur={() => setFocusedField(null)}
                     placeholder="Confirm new password"
                     placeholderTextColor={themeColors.textMuted}
                     secureTextEntry={!showConfirmPassword}

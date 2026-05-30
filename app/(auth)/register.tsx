@@ -55,7 +55,7 @@ export default function RegisterScreen() {
 
   // Local interaction loaders and active focused glows
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [focusedField, setFocusedField] = useState<string | null>(null);
+  const setFocusedField = (val: any) => {};
 
   // Password visibility
   const [showPassword, setShowPassword] = useState(false);
@@ -204,26 +204,17 @@ export default function RegisterScreen() {
   };
 
   const getInputWrapperStyle = (fieldName: string, hasError: any) => {
-    const isFocused = focusedField === fieldName;
     return [
       styles.inputWrapper,
       {
-        borderColor: hasError ? themeColors.danger : 
-                     isFocused ? (isDark ? '#2E9EBF' : themeColors.primary) :
-                     isDark ? 'rgba(46, 158, 191, 0.2)' : themeColors.border,
+        borderColor: hasError ? themeColors.danger : isDark ? 'rgba(46, 158, 191, 0.25)' : themeColors.border,
         backgroundColor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#F8FAFC',
-        shadowColor: isFocused ? (isDark ? '#2E9EBF' : themeColors.primary) : 'transparent',
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: isFocused ? 0.35 : 0,
-        shadowRadius: 8,
-        elevation: isFocused ? 2 : 0,
       }
     ];
   };
 
   const getIconColor = (fieldName: string, hasError: any) => {
     if (hasError) return themeColors.danger;
-    if (focusedField === fieldName) return isDark ? '#2E9EBF' : themeColors.primary;
     return themeColors.textMuted;
   };
 
@@ -404,7 +395,7 @@ export default function RegisterScreen() {
 
   return (
     <KeyboardAvoidingView 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined} 
       style={[styles.container, { backgroundColor: isDark ? '#080C14' : '#F8FAFC' }]}
     >
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
@@ -430,6 +421,7 @@ export default function RegisterScreen() {
       </View>
 
       <ScrollView 
+        style={{ flex: 1, zIndex: 1 }}
         contentContainerStyle={styles.scrollContent} 
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}

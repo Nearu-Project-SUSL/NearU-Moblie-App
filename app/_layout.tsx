@@ -18,7 +18,10 @@ function RootNavigationLayout() {
     if (isSessionLoading) return;
     if (segments.length === 0) return; // Guard against uninitialized transient router states
 
-    const inAuthGroup = segments.includes('(auth)');
+    const inAuthGroup = segments.includes('(auth)') || 
+                        segments.includes('login') || 
+                        segments.includes('register') || 
+                        segments.includes('forgot');
 
     if (!isAuthenticated && !inAuthGroup) {
       // Direct unauthorized users strictly to login
