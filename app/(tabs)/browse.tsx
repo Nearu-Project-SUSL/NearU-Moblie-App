@@ -52,13 +52,13 @@ const SERVICES = [
     id: 'rides',
     label: 'Uni Rides',
     description: 'Quick campus commutes',
-    image: require('../../assets/ride_deal.png'),
+    image: require('../../assets/rides_service.png'),
   },
   {
     id: 'accommodation',
     label: 'Accommodations',
     description: 'Verified student boardings',
-    image: require('../../assets/accommodation_deal.png'),
+    image: require('../../assets/stays_service.png'),
   },
   {
     id: 'jobs',
@@ -77,6 +77,18 @@ const SERVICES = [
     label: 'Deals Vault',
     description: 'Exclusive student savings',
     image: require('../../assets/offer_service.png'),
+  },
+  {
+    id: 'transport',
+    label: 'Transport',
+    description: 'Bus arrival times & Tuk-Tuks',
+    image: require('../../assets/transport_service.png'),
+  },
+  {
+    id: 'bike-rentals',
+    label: 'Bike Rentals',
+    description: 'Rent bicycles around campus',
+    image: require('../../assets/bike_service.png'),
   },
 ];
 
@@ -158,7 +170,7 @@ export default function HomeScreen() {
         {/* ── Navigation Header ── */}
         <View style={styles.navHeader}>
           <View style={styles.navLeft}>
-            <NearULogo size={36} />
+            <NearULogo size={56} />
             <View style={styles.navTextGroup}>
               <Text style={[styles.navBrand, { color: Colors.brand.accent }]}>
                 NearU

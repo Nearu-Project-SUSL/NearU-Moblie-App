@@ -2,7 +2,7 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { useColorScheme, Platform } from 'react-native';
 import { Colors } from '../../constants/Colors';
-import { Home, Bike, User } from 'lucide-react-native';
+import { Home, Bike, Heart, User } from 'lucide-react-native';
 
 export default function TabsLayout() {
   const systemTheme = useColorScheme() ?? 'light';
@@ -51,6 +51,13 @@ export default function TabsLayout() {
         options={{
           title: 'Rides',
           tabBarIcon: ({ color, size }) => <Bike size={size - 2} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="favourites"
+        options={{
+          title: 'Favourites',
+          tabBarIcon: ({ color, size }) => <Heart size={size - 2} color={color} />,
         }}
       />
       <Tabs.Screen

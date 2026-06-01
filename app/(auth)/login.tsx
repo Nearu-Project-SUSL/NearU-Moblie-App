@@ -205,9 +205,9 @@ export default function LoginScreen() {
               borderColor: isDark ? 'rgba(46, 158, 191, 0.25)' : 'rgba(46, 158, 191, 0.15)',
               borderWidth: 1.5,
               padding: 8,
-              borderRadius: 22,
-              width: 72,
-              height: 72,
+              borderRadius: 26,
+              width: 84,
+              height: 84,
               alignItems: 'center',
               justifyContent: 'center',
               marginBottom: 14,
@@ -216,7 +216,7 @@ export default function LoginScreen() {
             accessibilityRole="image"
             accessibilityLabel="NearU Logo"
           >
-            <NearULogo size={52} />
+            <NearULogo size={62} />
           </View>
           <Text style={[styles.brandTitle, { color: themeColors.text }]}>NearU</Text>
           <Text style={[styles.brandSubtitle, { color: themeColors.textSecondary }]}>

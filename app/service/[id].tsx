@@ -51,13 +51,13 @@ const SERVICE_META: Record<string, { title: string; subtitle: string; themeColor
     title: 'Uni Rides',
     subtitle: 'Safe, affordable campus commutes',
     themeColor: '#2E9EBF',
-    bgImage: require('../../assets/ride_deal.png'),
+    bgImage: require('../../assets/rides_service.png'),
   },
   accommodation: {
     title: 'Accommodations',
     subtitle: 'Vetted student boarding houses & rooms',
     themeColor: '#10B981',
-    bgImage: require('../../assets/accommodation_deal.png'),
+    bgImage: require('../../assets/stays_service.png'),
   },
   jobs: {
     title: 'Jobs & Gigs',
@@ -76,6 +76,18 @@ const SERVICE_META: Record<string, { title: string; subtitle: string; themeColor
     subtitle: 'Exclusive student saving vaults',
     themeColor: '#F59E0B',
     bgImage: require('../../assets/offer_service.png'),
+  },
+  transport: {
+    title: 'Transport Hub',
+    subtitle: 'Public bus schedules & Tuk-Tuk numbers',
+    themeColor: '#0F4C81',
+    bgImage: require('../../assets/transport_service.png'),
+  },
+  'bike-rentals': {
+    title: 'Bike Rentals',
+    subtitle: 'Rent eco-friendly bicycles around university',
+    themeColor: '#84CC16',
+    bgImage: require('../../assets/bike_service.png'),
   },
 };
 
@@ -506,6 +518,108 @@ export default function ServiceDetailScreen() {
                 </View>
               )}
             </Pressable>
+          </View>
+        )}
+
+        {/* 7. TRANSPORT SERVICE PAGE */}
+        {id === 'transport' && (
+          <View style={styles.detailSection}>
+            <Text style={[styles.sectionTitle, { color: themeColors.text }]}>Public Bus arrival times</Text>
+            
+            {[
+              { name: 'Pambahinna - Balangoda Shuttle', time: '10:15 AM (In 5 mins)', type: 'SUSL Student Bus', route: 'Via Main Campus Canteen' },
+              { name: 'Colombo - Badulla Express', time: '10:30 AM (In 20 mins)', type: 'CTB Long Distance Bus', route: 'Pambahinna Junction Stop' },
+              { name: 'Belihuloya Town circular', time: '10:45 AM (In 35 mins)', type: 'Private Shuttle Bus', route: 'Via hostels block A-F' },
+            ].map((bus, index) => (
+              <View 
+                key={index} 
+                style={[styles.vendorCard, { backgroundColor: systemTheme === 'light' ? '#FFFFFF' : themeColors.surface, borderColor: themeColors.border }]}
+              >
+                <View style={styles.vendorHeader}>
+                  <Text style={[styles.vendorName, { color: themeColors.text }]}>{bus.name}</Text>
+                  <View style={[styles.gigTag, { backgroundColor: service.themeColor + '1C' }]}>
+                    <Text style={{ color: service.themeColor, fontSize: 10, fontWeight: '800' }}>{bus.time}</Text>
+                  </View>
+                </View>
+                <Text style={{ color: themeColors.textSecondary, fontSize: 12, marginTop: 4 }}>{bus.type} • {bus.route}</Text>
+              </View>
+            ))}
+
+            <Text style={[styles.sectionTitle, { color: themeColors.text, marginTop: 16 }]}>Campus Tuk-Tuks Directory</Text>
+            {[
+              { name: 'Nimal Silva', number: '0712345678', vehicle: 'Tuk-Tuk ST-4409', rating: 4.9, activeZone: 'Computing Faculty Stop' },
+              { name: 'Sameera Bandara', number: '0779876543', vehicle: 'Tuk-Tuk ST-8832', rating: 4.8, activeZone: 'SUSL Main Gate Hub' },
+              { name: 'Upul Perera', number: '0754433221', vehicle: 'Tuk-Tuk ST-1102', rating: 4.7, activeZone: 'Library & Hostel Stop' },
+            ].map((driver, index) => (
+              <Pressable 
+                key={index} 
+                onPress={() => HapticService.triggerSuccess()}
+                style={[styles.vendorCard, { backgroundColor: systemTheme === 'light' ? '#FFFFFF' : themeColors.surface, borderColor: themeColors.border }]}
+              >
+                <View style={styles.vendorHeader}>
+                  <View>
+                    <Text style={[styles.vendorName, { color: themeColors.text }]}>{driver.name}</Text>
+                    <Text style={{ color: themeColors.textSecondary, fontSize: 11, marginTop: 1 }}>{driver.vehicle}</Text>
+                  </View>
+                  <View style={styles.ratingRow}>
+                    <Star size={13} color="#FBBF24" fill="#FBBF24" />
+                    <Text style={{ color: themeColors.textSecondary, fontSize: 12, fontWeight: '700' }}>{driver.rating}</Text>
+                  </View>
+                </View>
+                <View style={[styles.vendorStats, { justifyContent: 'space-between', marginTop: 10 }]}>
+                  <Text style={{ color: themeColors.textMuted, fontSize: 11 }}>Zone: {driver.activeZone}</Text>
+                  <Text style={{ color: Colors.brand.accent, fontWeight: '800', fontSize: 12 }}>Call: {driver.number}</Text>
+                </View>
+              </Pressable>
+            ))}
+          </View>
+        )}
+
+        {/* 8. BIKE RENTALS SERVICE PAGE */}
+        {id === 'bike-rentals' && (
+          <View style={styles.detailSection}>
+            <Text style={[styles.sectionTitle, { color: themeColors.text }]}>Available Rental Stands</Text>
+            
+            {[
+              { stand: 'Computing Faculty Dock', bikes: '6 bikes', rate: 'Rs. 50/hr', active: 'Smart Lock active' },
+              { stand: 'SUSL Main Gate Dock', bikes: '3 bikes', rate: 'Rs. 50/hr', active: 'Smart Lock active' },
+              { stand: 'Central Library Stand', bikes: '0 bikes (Empty)', rate: 'Rs. 50/hr', active: 'Restocking soon' },
+            ].map((stand, index) => (
+              <Pressable 
+                key={index}
+                onPress={() => {
+                  if (stand.bikes !== '0 bikes (Empty)') {
+                    HapticService.triggerSelection();
+                    setSelectedSubService(stand.stand);
+                  }
+                }}
+                style={[styles.vendorCard, { backgroundColor: systemTheme === 'light' ? '#FFFFFF' : themeColors.surface, borderColor: themeColors.border }]}
+              >
+                <View style={styles.vendorHeader}>
+                  <Text style={[styles.vendorName, { color: themeColors.text }]}>{stand.stand}</Text>
+                  <Text style={{ color: service.themeColor, fontWeight: '800', fontSize: 13 }}>{stand.rate}</Text>
+                </View>
+                <View style={[styles.vendorStats, { justifyContent: 'space-between', marginTop: 8 }]}>
+                  <Text style={{ color: stand.bikes.includes('Empty') ? '#EF4444' : themeColors.success, fontSize: 12, fontWeight: '700' }}>{stand.bikes}</Text>
+                  <Text style={{ color: themeColors.textMuted, fontSize: 11 }}>{stand.active}</Text>
+                </View>
+
+                {selectedSubService === stand.stand && (
+                  <View style={styles.orderPickerContainer}>
+                    <Text style={{ color: service.themeColor, fontWeight: '800', fontSize: 12, textTransform: 'uppercase' }}>Tap to unlock bike</Text>
+                    <Pressable 
+                      onPress={() => {
+                        HapticService.triggerSuccess();
+                        alert('Smart Bike unlocked! Lock Code: 7739. Safe commute!');
+                      }}
+                      style={[styles.bookingConfirmBtn, { backgroundColor: service.themeColor }]}
+                    >
+                      <Text style={styles.bookingConfirmText}>Unlock Smart Bike #BK-7739</Text>
+                    </Pressable>
+                  </View>
+                )}
+              </Pressable>
+            ))}
           </View>
         )}
 

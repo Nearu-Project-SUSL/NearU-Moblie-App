@@ -431,7 +431,7 @@ export default function RegisterScreen() {
         <Pressable 
           onPress={() => {
             HapticService.triggerSelection();
-            router.back();
+            router.replace('/(auth)/login');
           }} 
           style={styles.backBtn}
           accessible={true}
@@ -442,11 +442,11 @@ export default function RegisterScreen() {
           <ArrowLeft size={16} color={themeColors.text} />
           <Text style={[styles.backText, { color: themeColors.text }]}>Back to Login</Text>
         </Pressable>
-
+ 
         {/* Intro */}
         <View style={styles.introBlock}>
           <View style={styles.logoRow}>
-            <NearULogo size={32} />
+            <NearULogo size={44} />
             <Text style={[styles.brandText, { color: Colors.brand.accent }]}>NearU</Text>
           </View>
           <Text style={[styles.title, { color: themeColors.text }]}>Create Account</Text>
@@ -1322,7 +1322,7 @@ export default function RegisterScreen() {
           <Pressable 
             onPress={() => {
               HapticService.triggerSelection();
-              router.push('/(auth)/login');
+              router.replace('/(auth)/login');
             }}
             accessible={true}
             accessibilityRole="button"
