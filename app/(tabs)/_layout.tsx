@@ -2,7 +2,7 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../../constants/Colors';
-import { Compass, ShoppingBag, User } from 'lucide-react-native';
+import { Home, ShoppingBag, User } from 'lucide-react-native';
 
 export default function TabsLayout() {
   const systemTheme = useColorScheme() ?? 'light';
@@ -12,7 +12,7 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: themeColors.tabIconSelected,
+        tabBarActiveTintColor: Colors.brand.accent,
         tabBarInactiveTintColor: themeColors.tabIconDefault,
         tabBarStyle: {
           backgroundColor: themeColors.surface,
@@ -37,8 +37,8 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="browse"
         options={{
-          title: 'Browse',
-          tabBarIcon: ({ color, size }) => <Compass size={size - 2} color={color} />,
+          title: 'Home',
+          tabBarIcon: ({ color, size }) => <Home size={size - 2} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -58,3 +58,4 @@ export default function TabsLayout() {
     </Tabs>
   );
 }
+

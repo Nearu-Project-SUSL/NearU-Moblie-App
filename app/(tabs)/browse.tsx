@@ -1,583 +1,573 @@
-import React, { useState } from 'react';
-import { 
-  StyleSheet, 
-  View, 
-  Text, 
-  TextInput, 
-  ScrollView, 
-  Pressable, 
-  useColorScheme,
+import React, { useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
   FlatList,
-  Image
+  Pressable,
+  Animated,
+  useColorScheme,
+  Dimensions,
+  Platform,
 } from 'react-native';
-import { useAuth } from '../../hooks/useAuth';
-import { useLocation } from '../../hooks/useLocation';
-import { Colors } from '../../constants/Colors';
-import { Card } from '../../components/Card';
-import { Button } from '../../components/Button';
-import { ServiceItem, ServiceCategory } from '../../types';
-import { Search, Compass, Star, Clock, MapPin, SlidersHorizontal, Check } from 'lucide-react-native';
-import { Modal } from '../../components/Modal';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  UtensilsCrossed,
+  Bike,
+  Hotel,
+  BriefcaseBusiness,
+  Gift,
+  Tag,
+  MapPin,
+  Bell,
+  Sparkles,
+  ArrowRight,
+  ChevronRight,
+} from 'lucide-react-native';
 
-// High-fidelity mockup student services
-const CAMPUS_SERVICES: ServiceItem[] = [
+import { Colors } from '../../constants/Colors';
+import { useAuth } from '../../hooks/useAuth';
+import { NearULogo } from '../../components/NearULogo';
+import { SectionHeader } from '../../components/home/SectionHeader';
+import { ServiceGridCard } from '../../components/home/ServiceGridCard';
+import { DealCard } from '../../components/home/DealCard';
+import { TestimonialCard } from '../../components/home/TestimonialCard';
+import { HotDeal, Testimonial } from '../../types';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
+
+// ── Mock Data ──────────────────────────────────────────────────────────────
+
+const SERVICES = [
   {
-    id: 'srv_1',
-    title: 'Express Dorm Printing',
-    description: 'Fast, secure laser printing. PDF/Doc review with campus dorm room delivery.',
-    price: 0.15,
-    rating: 4.9,
-    deliveryTimeMinutes: 15,
-    category: 'print',
-    providerName: 'David S. (CS Senior)',
-    isAvailable: true,
-    imageUrl: 'https://images.unsplash.com/photo-1563223552-30d01fda3eca?q=80&w=256&auto=format&fit=crop'
+    id: 'food',
+    label: 'Food',
+    iconName: 'food',
+    badge: '12 shops',
+    color: '#E05638',
   },
   {
-    id: 'srv_2',
-    title: 'Hot Pizza Delivery (SUSL Gate)',
-    description: 'Fresh woodfired local pizza brought directly to campus hostel gates or lecture rooms.',
-    price: 8.99,
-    rating: 4.8,
-    deliveryTimeMinutes: 25,
-    category: 'food',
-    providerName: 'Main Street Bakers',
-    isAvailable: true,
-    imageUrl: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=256&auto=format&fit=crop'
+    id: 'rides',
+    label: 'Rides',
+    iconName: 'rides',
+    badge: '8 active',
+    color: '#2E9EBF',
   },
   {
-    id: 'srv_3',
-    title: 'Hostel Laundry Drop & Fold',
-    description: 'Weekly laundry wash and premium press. Drop off at student center, pick up next day.',
-    price: 12.00,
-    rating: 4.7,
-    deliveryTimeMinutes: 1440,
-    category: 'laundry',
-    providerName: 'Dorm Fresh Laundry',
-    isAvailable: true,
-    imageUrl: 'https://images.unsplash.com/photo-1545173168-9f1947e8b94b?q=80&w=256&auto=format&fit=crop'
+    id: 'accommodation',
+    label: 'Stays',
+    iconName: 'accommodation',
+    badge: '24 listed',
+    color: '#10B981',
   },
   {
-    id: 'srv_4',
-    title: 'Quick Library Run / Book Retrieval',
-    description: 'Need books retrieved or items returned? Quick peer helper run across central library blocks.',
-    price: 3.50,
-    rating: 4.9,
-    deliveryTimeMinutes: 20,
-    category: 'errand',
-    providerName: 'Sarah K. (Peer Helper)',
-    isAvailable: true,
-    imageUrl: 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?q=80&w=256&auto=format&fit=crop'
-  }
+    id: 'jobs',
+    label: 'Jobs',
+    iconName: 'jobs',
+    badge: '6 new',
+    color: '#8B5CF6',
+  },
+  {
+    id: 'gifts',
+    label: 'Gifts',
+    iconName: 'gifts',
+    color: '#EC4899',
+  },
+  {
+    id: 'deals',
+    label: 'Deals',
+    iconName: 'deals',
+    badge: 'Hot',
+    color: '#F59E0B',
+  },
 ];
 
-export default function BrowseScreen() {
-  const { user } = useAuth();
-  const { location, isOnCampus } = useLocation();
+const SERVICE_ICONS: Record<string, React.ReactNode> = {
+  food: <UtensilsCrossed size={24} color="#E05638" />,
+  rides: <Bike size={24} color="#2E9EBF" />,
+  accommodation: <Hotel size={24} color="#10B981" />,
+  jobs: <BriefcaseBusiness size={24} color="#8B5CF6" />,
+  gifts: <Gift size={24} color="#EC4899" />,
+  deals: <Tag size={24} color="#F59E0B" />,
+};
+
+const HOT_DEALS: HotDeal[] = [
+  {
+    id: 'deal_1',
+    title: 'Campus Food Fiesta',
+    description: 'Get 30% off your first food order from any campus canteen this week.',
+    badge: '30% OFF',
+    badgeColor: '#EF4444',
+    imageUrl: require('../../assets/food_deal.png'),
+  },
+  {
+    id: 'deal_2',
+    title: 'Shared Ride Saver',
+    description: 'Split fare with 2+ riders and save up to Rs.150 on your next campus ride.',
+    badge: 'SAVE RS.150',
+    badgeColor: '#2E9EBF',
+    imageUrl: require('../../assets/ride_deal.png'),
+  },
+  {
+    id: 'deal_3',
+    title: 'Early Bird Boarding',
+    description: 'Book verified rooms before semester starts and get priority listing access.',
+    badge: 'LIMITED',
+    badgeColor: '#10B981',
+    imageUrl: require('../../assets/accommodation_deal.png'),
+  },
+];
+
+const TESTIMONIALS: Testimonial[] = [
+  {
+    id: 'test_1',
+    userName: 'Kasun Perera',
+    userInitial: 'K',
+    message: 'NearU completely changed how I find food on campus. No more walking to the canteen in the rain — the riders bring it right to my faculty!',
+    rating: 5,
+    createdAt: '2 days ago',
+  },
+  {
+    id: 'test_2',
+    userName: 'Nimali Fernando',
+    userInitial: 'N',
+    message: 'Found my boarding room through NearU within a day. The verified reviews from fellow students really helped me feel confident about my choice.',
+    rating: 5,
+    createdAt: '1 week ago',
+  },
+  {
+    id: 'test_3',
+    userName: 'Malith Jayasuriya',
+    userInitial: 'M',
+    message: 'The ride-sharing feature is genius. We split the taxi cost three ways and it works out cheaper than the bus. Love this app!',
+    rating: 4,
+    createdAt: '3 days ago',
+  },
+];
+
+// ── Component ──────────────────────────────────────────────────────────────
+
+export default function HomeScreen() {
   const systemTheme = useColorScheme() ?? 'light';
   const themeColors = Colors[systemTheme];
+  const insets = useSafeAreaInsets();
+  const { user } = useAuth();
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<ServiceCategory | 'all'>('all');
-  const [detailsModalVisible, setDetailsModalVisible] = useState(false);
-  const [selectedService, setSelectedService] = useState<ServiceItem | null>(null);
-  const [orderPlaced, setOrderPlaced] = useState(false);
-
-  const categories: { label: string; value: ServiceCategory | 'all' }[] = [
-    { label: 'All', value: 'all' },
-    { label: 'Printouts', value: 'print' },
-    { label: 'Campus Eats', value: 'food' },
-    { label: 'Laundry', value: 'laundry' },
-    { label: 'Errands', value: 'errand' },
-  ];
-
-  const filteredServices = CAMPUS_SERVICES.filter(service => {
-    const matchesSearch = service.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          service.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || service.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
-
-  const handleOpenDetails = (service: ServiceItem) => {
-    setSelectedService(service);
-    setOrderPlaced(false);
-    setDetailsModalVisible(true);
-  };
-
-  const handlePlaceOrder = () => {
-    setOrderPlaced(true);
-    setTimeout(() => {
-      setDetailsModalVisible(false);
-    }, 1500);
-  };
+  const firstName = user?.firstName || 'Student';
+  const greeting = getGreeting();
 
   return (
-    <View style={[styles.container, { backgroundColor: themeColors.background }]}>
-      
-      {/* Top Interactive Brand Navigation Bar */}
-      <View style={[styles.navBar, { borderBottomColor: themeColors.border, backgroundColor: themeColors.surface }]}>
-        <View style={styles.navMain}>
-          <View>
-            <Text style={[styles.greeting, { color: themeColors.textSecondary }]}>
-              Hello, {user?.firstName || 'Student'} 👋
-            </Text>
-            <View style={styles.locationContainer}>
-              <MapPin size={14} color={themeColors.primary} style={styles.locationIcon} />
-              <Text style={[styles.locationName, { color: themeColors.text }]} numberOfLines={1}>
-                {isOnCampus ? location?.campusName : 'Searching for campus GPS...'}
+    <View style={[styles.root, { backgroundColor: themeColors.background }]}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: insets.top },
+        ]}
+      >
+        {/* ── Navigation Header ── */}
+        <View style={styles.navHeader}>
+          <View style={styles.navLeft}>
+            <NearULogo size={36} />
+            <View style={styles.navTextGroup}>
+              <Text style={[styles.navBrand, { color: Colors.brand.accent }]}>
+                NearU
               </Text>
+              <View style={styles.locationRow}>
+                <MapPin size={11} color={themeColors.textMuted} />
+                <Text style={[styles.locationText, { color: themeColors.textMuted }]}>
+                  Sabaragamuwa University
+                </Text>
+              </View>
             </View>
           </View>
-          <View style={[styles.indicatorBadge, { backgroundColor: themeColors.successLight }]}>
-            <View style={[styles.dot, { backgroundColor: themeColors.success }]} />
-            <Text style={[styles.badgeText, { color: themeColors.success }]}>Online</Text>
-          </View>
-        </View>
-
-        {/* Premium Search Bar */}
-        <View style={styles.searchBlock}>
-          <View style={[styles.searchWrapper, { borderColor: themeColors.border, backgroundColor: systemTheme === 'light' ? '#F1F5F9' : '#0F172A' }]}>
-            <Search size={18} color={themeColors.textMuted} style={styles.searchIcon} />
-            <TextInput
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholder="Search food, printing, errands..."
-              placeholderTextColor={themeColors.textMuted}
-              style={[styles.searchInput, { color: themeColors.text }]}
-            />
-          </View>
-          <Pressable style={[styles.filterBtn, { borderColor: themeColors.border, backgroundColor: themeColors.surface }]}>
-            <SlidersHorizontal size={18} color={themeColors.text} />
+          <Pressable
+            style={[
+              styles.notifButton,
+              {
+                backgroundColor: systemTheme === 'light'
+                  ? themeColors.surfaceElevated
+                  : themeColors.surface,
+                borderColor: themeColors.border,
+              },
+            ]}
+          >
+            <Bell size={18} color={themeColors.textSecondary} />
+            {/* Notification dot */}
+            <View style={styles.notifDot} />
           </Pressable>
         </View>
 
-        {/* Scrollable Categories List */}
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoriesScroll}
+        {/* ── Hero Greeting Card ── */}
+        <View
+          style={[
+            styles.heroCard,
+            {
+              backgroundColor: systemTheme === 'light'
+                ? '#F0F9FC'
+                : 'rgba(46, 158, 191, 0.08)',
+              borderColor: systemTheme === 'light'
+                ? 'rgba(46, 158, 191, 0.15)'
+                : 'rgba(46, 158, 191, 0.12)',
+            },
+          ]}
         >
-          {categories.map((cat, idx) => {
-            const isSelected = selectedCategory === cat.value;
-            return (
-              <Pressable
-                key={idx}
-                onPress={() => setSelectedCategory(cat.value)}
+          {/* Decorative accent gradient line */}
+          <View style={styles.heroAccentLine} />
+          <View style={styles.heroContent}>
+            <View style={styles.heroTextGroup}>
+              <Text style={[styles.heroGreeting, { color: themeColors.textSecondary }]}>
+                {greeting} 👋
+              </Text>
+              <Text style={[styles.heroName, { color: themeColors.text }]}>
+                {firstName}
+              </Text>
+              <Text style={[styles.heroSubtitle, { color: themeColors.textMuted }]}>
+                What would you like to explore today?
+              </Text>
+            </View>
+            <View
+              style={[
+                styles.heroAvatarContainer,
+                { backgroundColor: Colors.brand.accent },
+              ]}
+            >
+              <Text style={styles.heroAvatarText}>
+                {firstName.charAt(0).toUpperCase()}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* ── Quick Services Grid ── */}
+        <View style={styles.section}>
+          <SectionHeader
+            title="Explore Services"
+            subtitle="Quick access to campus essentials"
+            icon={<Sparkles size={20} color={Colors.brand.accent} />}
+          />
+          <View style={styles.servicesGrid}>
+            {SERVICES.map((service) => (
+              <ServiceGridCard
+                key={service.id}
+                icon={SERVICE_ICONS[service.iconName]}
+                label={service.label}
+                badge={service.badge}
+                color={service.color}
+                onPress={() => {
+                  // Navigation placeholder — will connect to actual screens
+                }}
+              />
+            ))}
+          </View>
+        </View>
+
+        {/* ── Hot Deals Carousel ── */}
+        <View style={styles.section}>
+          <SectionHeader
+            title="Hot Deals & Offers"
+            subtitle="Limited time campus exclusives"
+            icon={<Tag size={20} color="#F59E0B" />}
+            rightElement={
+              <Pressable style={styles.viewAllButton}>
+                <Text style={[styles.viewAllText, { color: Colors.brand.accent }]}>
+                  View All
+                </Text>
+                <ChevronRight size={14} color={Colors.brand.accent} />
+              </Pressable>
+            }
+          />
+          <FlatList
+            data={HOT_DEALS}
+            renderItem={({ item }) => <DealCard deal={item} />}
+            keyExtractor={(item) => item.id}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.carouselContainer}
+            snapToInterval={SCREEN_WIDTH * 0.72 + 16}
+            decelerationRate="fast"
+          />
+        </View>
+
+        {/* ── Testimonials Section ── */}
+        <View style={styles.section}>
+          <SectionHeader
+            title="Student Reviews"
+            subtitle="What your peers say about NearU"
+            icon={<Sparkles size={20} color="#EC4899" />}
+          />
+          <FlatList
+            data={TESTIMONIALS}
+            renderItem={({ item }) => <TestimonialCard testimonial={item} />}
+            keyExtractor={(item) => item.id}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.carouselContainer}
+          />
+        </View>
+
+        {/* ── Share CTA Footer ── */}
+        <View style={[styles.section, styles.footerSection]}>
+          <View
+            style={[
+              styles.footerCard,
+              {
+                backgroundColor: systemTheme === 'light'
+                  ? Colors.brand.accent
+                  : 'rgba(46, 158, 191, 0.15)',
+                borderColor: systemTheme === 'light'
+                  ? 'transparent'
+                  : 'rgba(46, 158, 191, 0.2)',
+              },
+            ]}
+          >
+            <View style={styles.footerTextGroup}>
+              <Text
                 style={[
-                  styles.categoryChip,
-                  { 
-                    backgroundColor: isSelected ? themeColors.primary : (systemTheme === 'light' ? '#F1F5F9' : '#1E293B'),
-                    borderColor: isSelected ? themeColors.primary : themeColors.border,
-                  }
+                  styles.footerTitle,
+                  {
+                    color: systemTheme === 'light' ? '#FFFFFF' : Colors.brand.accent,
+                  },
                 ]}
               >
-                <Text 
-                  style={[
-                    styles.categoryChipLabel, 
-                    { 
-                      color: isSelected ? '#FFFFFF' : themeColors.textSecondary,
-                      fontWeight: isSelected ? '700' : '600'
-                    }
-                  ]}
-                >
-                  {cat.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-      </View>
-
-      {/* Main Services List */}
-      <FlatList
-        data={filteredServices}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        renderItem={({ item }) => (
-          <Card 
-            variant="elevated" 
-            style={styles.serviceCard} 
-            onPress={() => handleOpenDetails(item)}
-            padding="none"
-          >
-            <View style={styles.cardLayout}>
-              <Image source={{ uri: item.imageUrl }} style={styles.cardImage} />
-              
-              <View style={styles.cardDetails}>
-                <View style={styles.cardHeaderRow}>
-                  <Text style={[styles.categoryBadge, { color: themeColors.primary, backgroundColor: themeColors.primaryLight }]}>
-                    {item.category.toUpperCase()}
-                  </Text>
-                  <View style={styles.ratingRow}>
-                    <Star size={12} color="#F59E0B" fill="#F59E0B" />
-                    <Text style={[styles.ratingVal, { color: themeColors.text }]}>{item.rating}</Text>
-                  </View>
-                </View>
-
-                <Text style={[styles.serviceTitle, { color: themeColors.text }]} numberOfLines={1}>
-                  {item.title}
-                </Text>
-                
-                <Text style={[styles.serviceDesc, { color: themeColors.textSecondary }]} numberOfLines={2}>
-                  {item.description}
-                </Text>
-
-                <View style={styles.cardFooter}>
-                  <Text style={[styles.priceTag, { color: themeColors.text }]}>
-                    ${item.price.toFixed(2)}
-                  </Text>
-                  <View style={styles.metaRow}>
-                    <Clock size={12} color={themeColors.textMuted} style={styles.metaIcon} />
-                    <Text style={[styles.metaText, { color: themeColors.textSecondary }]}>
-                      {item.deliveryTimeMinutes >= 60 
-                        ? `${Math.round(item.deliveryTimeMinutes / 60)} hrs` 
-                        : `${item.deliveryTimeMinutes} mins`}
-                    </Text>
-                  </View>
-                </View>
-              </View>
+                Enjoying NearU? ✨
+              </Text>
+              <Text
+                style={[
+                  styles.footerSubtitle,
+                  {
+                    color: systemTheme === 'light'
+                      ? 'rgba(255,255,255,0.85)'
+                      : themeColors.textSecondary,
+                  },
+                ]}
+              >
+                Share your experience and help fellow students discover campus services.
+              </Text>
             </View>
-          </Card>
-        )}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Compass size={48} color={themeColors.textMuted} style={styles.emptyIcon} />
-            <Text style={[styles.emptyTitle, { color: themeColors.text }]}>No services found</Text>
-            <Text style={[styles.emptySubtitle, { color: themeColors.textSecondary }]}>
-              Try searching for something else or adjusting your category filter.
-            </Text>
+            <Pressable
+              style={[
+                styles.footerButton,
+                {
+                  backgroundColor: systemTheme === 'light'
+                    ? 'rgba(255,255,255,0.2)'
+                    : Colors.brand.accent,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.footerButtonText,
+                  { color: '#FFFFFF' },
+                ]}
+              >
+                Share
+              </Text>
+              <ArrowRight size={14} color="#FFFFFF" />
+            </Pressable>
           </View>
-        }
-      />
+        </View>
 
-      {/* Details Sheet Modal */}
-      {selectedService && (
-        <Modal
-          visible={detailsModalVisible}
-          onClose={() => setDetailsModalVisible(false)}
-          title="Service Details"
-          height={480}
-        >
-          {orderPlaced ? (
-            <View style={styles.successWrapper}>
-              <View style={[styles.successCircle, { backgroundColor: themeColors.successLight }]}>
-                <Check size={36} color={themeColors.success} />
-              </View>
-              <Text style={[styles.successTitle, { color: themeColors.text }]}>Order Placed!</Text>
-              <Text style={[styles.successSubtitle, { color: themeColors.textSecondary }]}>
-                Your request has been sent to {selectedService.providerName}.
-              </Text>
-            </View>
-          ) : (
-            <View style={styles.modalContent}>
-              <Image source={{ uri: selectedService.imageUrl }} style={styles.modalImage} />
-              <View style={styles.modalMeta}>
-                <Text style={[styles.categoryBadge, { color: themeColors.primary, backgroundColor: themeColors.primaryLight }]}>
-                  {selectedService.category.toUpperCase()}
-                </Text>
-                <View style={styles.ratingRow}>
-                  <Star size={14} color="#F59E0B" fill="#F59E0B" />
-                  <Text style={[styles.ratingVal, { color: themeColors.text, fontSize: 14 }]}>{selectedService.rating}</Text>
-                </View>
-              </View>
-              
-              <Text style={[styles.modalTitle, { color: themeColors.text }]}>{selectedService.title}</Text>
-              <Text style={[styles.modalProvider, { color: themeColors.textSecondary }]}>
-                Offered by: <Text style={{ fontWeight: '600' }}>{selectedService.providerName}</Text>
-              </Text>
-              <Text style={[styles.modalDesc, { color: themeColors.textSecondary }]}>
-                {selectedService.description}
-              </Text>
-
-              <View style={styles.modalDivider} />
-
-              <View style={styles.modalFooterRow}>
-                <View>
-                  <Text style={[styles.priceLabel, { color: themeColors.textMuted }]}>Total Price</Text>
-                  <Text style={[styles.modalPrice, { color: themeColors.text }]}>${selectedService.price.toFixed(2)}</Text>
-                </View>
-                <Button 
-                  title="Confirm & Request" 
-                  onPress={handlePlaceOrder} 
-                  variant="primary" 
-                  style={styles.modalOrderBtn} 
-                />
-              </View>
-            </View>
-          )}
-        </Modal>
-      )}
-
+        {/* Bottom safe area spacing */}
+        <View style={{ height: insets.bottom + 20 }} />
+      </ScrollView>
     </View>
   );
 }
 
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good Morning';
+  if (hour < 17) return 'Good Afternoon';
+  return 'Good Evening';
+}
+
+// ── Styles ──────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
   },
-  navBar: {
-    paddingTop: 54,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomRightRadius: 20,
-    borderBottomLeftRadius: 20,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.03,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  navMain: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  greeting: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  locationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 2,
-    maxWidth: 220,
-  },
-  locationIcon: {
-    marginRight: 4,
-  },
-  locationName: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  indicatorBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 8,
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 6,
-  },
-  badgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  searchBlock: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  searchWrapper: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    height: 40,
-    marginRight: 10,
-  },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    height: '100%',
-  },
-  filterBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  categoriesScroll: {
+  scrollContent: {
     paddingBottom: 16,
   },
-  categoryChip: {
-    paddingVertical: 6,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    borderWidth: 1,
-    marginRight: 8,
-  },
-  categoryChipLabel: {
-    fontSize: 12,
-  },
-  listContent: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  serviceCard: {
-    marginBottom: 16,
-  },
-  cardLayout: {
+
+  // ── Navigation Header ──
+  navHeader: {
     flexDirection: 'row',
-  },
-  cardImage: {
-    width: 100,
-    height: '100%',
-    minHeight: 110,
-    backgroundColor: '#E2E8F0',
-  },
-  cardDetails: {
-    flex: 1,
-    padding: 12,
+    alignItems: 'center',
     justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 8,
   },
-  cardHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  categoryBadge: {
-    fontSize: 9,
-    fontWeight: '800',
-    paddingVertical: 2,
-    paddingHorizontal: 6,
-    borderRadius: 4,
-    letterSpacing: 0.5,
-  },
-  ratingRow: {
+  navLeft: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 10,
   },
-  ratingVal: {
-    fontSize: 12,
-    fontWeight: '700',
-    marginLeft: 3,
+  navTextGroup: {
+    gap: 1,
   },
-  serviceTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    marginTop: 4,
+  navBrand: {
+    fontSize: 20,
+    fontWeight: '900',
+    letterSpacing: -0.5,
   },
-  serviceDesc: {
-    fontSize: 12,
-    marginTop: 2,
-    lineHeight: 16,
-  },
-  cardFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 6,
-  },
-  priceTag: {
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  metaRow: {
+  locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 3,
   },
-  metaIcon: {
-    marginRight: 4,
-  },
-  metaText: {
+  locationText: {
     fontSize: 11,
     fontWeight: '600',
   },
-  emptyContainer: {
+  notifButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 64,
-    paddingHorizontal: 32,
+    position: 'relative',
   },
-  emptyIcon: {
-    marginBottom: 16,
+  notifDot: {
+    position: 'absolute',
+    top: 8,
+    right: 9,
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: '#EF4444',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
   },
-  emptyTitle: {
-    fontSize: 16,
-    fontWeight: '700',
+
+  // ── Hero Card ──
+  heroCard: {
+    marginHorizontal: 20,
+    marginTop: 16,
+    borderRadius: 22,
+    borderWidth: 1,
+    padding: 22,
+    overflow: 'hidden',
+  },
+  heroAccentLine: {
+    position: 'absolute',
+    top: 0,
+    left: 24,
+    right: 24,
+    height: 3,
+    borderBottomLeftRadius: 4,
+    borderBottomRightRadius: 4,
+    backgroundColor: Colors.brand.accent,
+  },
+  heroContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  heroTextGroup: {
+    flex: 1,
+    marginRight: 16,
+  },
+  heroGreeting: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  heroName: {
+    fontSize: 28,
+    fontWeight: '900',
+    letterSpacing: -0.5,
     marginBottom: 6,
   },
-  emptySubtitle: {
+  heroSubtitle: {
     fontSize: 13,
-    textAlign: 'center',
+    fontWeight: '500',
     lineHeight: 18,
   },
-  modalContent: {
-    flex: 1,
-  },
-  modalImage: {
-    width: '100%',
-    height: 140,
-    borderRadius: 12,
-    marginBottom: 12,
-    backgroundColor: '#E2E8F0',
-  },
-  modalMeta: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  heroAvatarContainer: {
+    width: 52,
+    height: 52,
+    borderRadius: 18,
     alignItems: 'center',
-    marginBottom: 8,
+    justifyContent: 'center',
   },
-  modalTitle: {
-    fontSize: 18,
+  heroAvatarText: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    fontWeight: '900',
+  },
+
+  // ── Sections ──
+  section: {
+    marginTop: 28,
+    paddingHorizontal: 20,
+  },
+  servicesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: -6,
+  },
+
+  // ── Carousels ──
+  carouselContainer: {
+    paddingLeft: 0,
+    paddingRight: 20,
+  },
+
+  // ── View All Button ──
+  viewAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  viewAllText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+
+  // ── Footer CTA ──
+  footerSection: {
+    marginTop: 32,
+  },
+  footerCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 22,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  footerTextGroup: {
+    flex: 1,
+    marginRight: 14,
+  },
+  footerTitle: {
+    fontSize: 17,
     fontWeight: '800',
     marginBottom: 4,
   },
-  modalProvider: {
-    fontSize: 13,
-    marginBottom: 8,
+  footerSubtitle: {
+    fontSize: 12,
+    fontWeight: '500',
+    lineHeight: 17,
   },
-  modalDesc: {
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  modalDivider: {
-    height: 1,
-    backgroundColor: 'rgba(148, 163, 184, 0.1)',
-    marginVertical: 14,
-  },
-  modalFooterRow: {
+  footerButton: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 'auto',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    gap: 6,
   },
-  priceLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  modalPrice: {
-    fontSize: 22,
-    fontWeight: '800',
-  },
-  modalOrderBtn: {
-    width: 170,
-  },
-  successWrapper: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 32,
-  },
-  successCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 18,
-  },
-  successTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    marginBottom: 6,
-  },
-  successSubtitle: {
+  footerButtonText: {
     fontSize: 13,
-    textAlign: 'center',
+    fontWeight: '700',
   },
 });
