@@ -1,4 +1,3 @@
-import React, { useRef } from 'react';
 import {
   View,
   Text,
@@ -10,7 +9,9 @@ import {
   useColorScheme,
   Dimensions,
   Platform,
+  TextInput,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   UtensilsCrossed,
@@ -24,73 +25,60 @@ import {
   Sparkles,
   ArrowRight,
   ChevronRight,
+  Search,
 } from 'lucide-react-native';
 
 import { Colors } from '../../constants/Colors';
 import { useAuth } from '../../hooks/useAuth';
+import { HapticService } from '../../services/HapticService';
 import { NearULogo } from '../../components/NearULogo';
 import { SectionHeader } from '../../components/home/SectionHeader';
 import { ServiceGridCard } from '../../components/home/ServiceGridCard';
 import { DealCard } from '../../components/home/DealCard';
 import { TestimonialCard } from '../../components/home/TestimonialCard';
 import { HotDeal, Testimonial } from '../../types';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-
-// ── Mock Data ──────────────────────────────────────────────────────────────
 
 const SERVICES = [
   {
     id: 'food',
-    label: 'Food',
-    iconName: 'food',
-    badge: '12 shops',
-    color: '#E05638',
+    label: 'Food Shops',
+    description: 'Local food vendors & canteens',
+    image: require('../../assets/food_service.png'),
   },
   {
     id: 'rides',
-    label: 'Rides',
-    iconName: 'rides',
-    badge: '8 active',
-    color: '#2E9EBF',
+    label: 'Uni Rides',
+    description: 'Quick campus commutes',
+    image: require('../../assets/ride_deal.png'),
   },
   {
     id: 'accommodation',
-    label: 'Stays',
-    iconName: 'accommodation',
-    badge: '24 listed',
-    color: '#10B981',
+    label: 'Accommodations',
+    description: 'Verified student boardings',
+    image: require('../../assets/accommodation_deal.png'),
   },
   {
     id: 'jobs',
-    label: 'Jobs',
-    iconName: 'jobs',
-    badge: '6 new',
-    color: '#8B5CF6',
+    label: 'Jobs & Gigs',
+    description: 'Flexible student roles',
+    image: require('../../assets/job_service.png'),
   },
   {
     id: 'gifts',
-    label: 'Gifts',
-    iconName: 'gifts',
-    color: '#EC4899',
+    label: 'Gift Shops',
+    description: 'Send surprises & bouquets',
+    image: require('../../assets/gift_service.png'),
   },
   {
     id: 'deals',
-    label: 'Deals',
-    iconName: 'deals',
-    badge: 'Hot',
-    color: '#F59E0B',
+    label: 'Deals Vault',
+    description: 'Exclusive student savings',
+    image: require('../../assets/offer_service.png'),
   },
 ];
-
-const SERVICE_ICONS: Record<string, React.ReactNode> = {
-  food: <UtensilsCrossed size={24} color="#E05638" />,
-  rides: <Bike size={24} color="#2E9EBF" />,
-  accommodation: <Hotel size={24} color="#10B981" />,
-  jobs: <BriefcaseBusiness size={24} color="#8B5CF6" />,
-  gifts: <Gift size={24} color="#EC4899" />,
-  deals: <Tag size={24} color="#F59E0B" />,
-};
 
 const HOT_DEALS: HotDeal[] = [
   {
@@ -149,6 +137,7 @@ const TESTIMONIALS: Testimonial[] = [
 // ── Component ──────────────────────────────────────────────────────────────
 
 export default function HomeScreen() {
+  const router = useRouter();
   const systemTheme = useColorScheme() ?? 'light';
   const themeColors = Colors[systemTheme];
   const insets = useSafeAreaInsets();
@@ -199,38 +188,29 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        {/* ── Hero Greeting Card ── */}
-        <View
-          style={[
-            styles.heroCard,
-            {
-              backgroundColor: systemTheme === 'light'
-                ? '#F0F9FC'
-                : 'rgba(46, 158, 191, 0.08)',
-              borderColor: systemTheme === 'light'
-                ? 'rgba(46, 158, 191, 0.15)'
-                : 'rgba(46, 158, 191, 0.12)',
-            },
-          ]}
+        {/* ── Improved Hero Greeting Card (Vibrant LinearGradient) ── */}
+        <LinearGradient
+          colors={systemTheme === 'light' ? ['#2E9EBF', '#156175'] : ['#1C2A30', '#0E171B']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.heroCard}
         >
-          {/* Decorative accent gradient line */}
-          <View style={styles.heroAccentLine} />
           <View style={styles.heroContent}>
             <View style={styles.heroTextGroup}>
-              <Text style={[styles.heroGreeting, { color: themeColors.textSecondary }]}>
-                {greeting} 👋
+              <Text style={[styles.heroGreeting, { color: '#FFFFFF', opacity: 0.88 }]}>
+                {greeting}
               </Text>
-              <Text style={[styles.heroName, { color: themeColors.text }]}>
+              <Text style={[styles.heroName, { color: '#FFFFFF' }]}>
                 {firstName}
               </Text>
-              <Text style={[styles.heroSubtitle, { color: themeColors.textMuted }]}>
+              <Text style={[styles.heroSubtitle, { color: '#FFFFFF', opacity: 0.75 }]}>
                 What would you like to explore today?
               </Text>
             </View>
             <View
               style={[
                 styles.heroAvatarContainer,
-                { backgroundColor: Colors.brand.accent },
+                { backgroundColor: 'rgba(255, 255, 255, 0.2)' },
               ]}
             >
               <Text style={styles.heroAvatarText}>
@@ -238,25 +218,25 @@ export default function HomeScreen() {
               </Text>
             </View>
           </View>
-        </View>
+        </LinearGradient>
 
         {/* ── Quick Services Grid ── */}
         <View style={styles.section}>
           <SectionHeader
             title="Explore Services"
-            subtitle="Quick access to campus essentials"
+            subtitle="Premium campus essentials at Sabragamuwa"
             icon={<Sparkles size={20} color={Colors.brand.accent} />}
           />
           <View style={styles.servicesGrid}>
             {SERVICES.map((service) => (
               <ServiceGridCard
                 key={service.id}
-                icon={SERVICE_ICONS[service.iconName]}
+                imageSource={service.image}
                 label={service.label}
-                badge={service.badge}
-                color={service.color}
+                description={service.description}
                 onPress={() => {
-                  // Navigation placeholder — will connect to actual screens
+                  HapticService.triggerSelection();
+                  router.push(`/service/${service.id}`);
                 }}
               />
             ))}
@@ -369,8 +349,8 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Bottom safe area spacing */}
-        <View style={{ height: insets.bottom + 20 }} />
+        {/* Bottom safe area spacing adjusted for floating bottom navigation tab bar */}
+        <View style={{ height: insets.bottom + 90 }} />
       </ScrollView>
     </View>
   );
@@ -512,7 +492,9 @@ const styles = StyleSheet.create({
   servicesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginHorizontal: -6,
+    justifyContent: 'space-between',
+    width: '100%',
+    marginTop: 10,
   },
 
   // ── Carousels ──
@@ -569,5 +551,22 @@ const styles = StyleSheet.create({
   footerButtonText: {
     fontSize: 13,
     fontWeight: '700',
+  },
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    height: 44,
+    marginTop: 16,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '500',
   },
 });

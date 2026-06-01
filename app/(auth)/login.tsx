@@ -19,7 +19,8 @@ import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { HapticService } from '../../services/HapticService';
 import { GoogleIcon } from '../../components/GoogleIcon';
-import { KeyRound, Mail, GraduationCap, Eye, EyeOff, Sparkles, AlertCircle, UserPlus } from 'lucide-react-native';
+import { NearULogo } from '../../components/NearULogo';
+import { KeyRound, Mail, Eye, EyeOff, Sparkles, AlertCircle, UserPlus } from 'lucide-react-native';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -200,14 +201,22 @@ export default function LoginScreen() {
         <View style={styles.headerBlock}>
           <View 
             style={[styles.logoIconContainer, { 
-              backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : '#DBEAFE',
-              borderColor: isDark ? 'rgba(59, 130, 246, 0.3)' : 'rgba(37, 99, 235, 0.15)'
+              backgroundColor: isDark ? 'rgba(46, 158, 191, 0.08)' : 'rgba(46, 158, 191, 0.05)',
+              borderColor: isDark ? 'rgba(46, 158, 191, 0.25)' : 'rgba(46, 158, 191, 0.15)',
+              borderWidth: 1.5,
+              padding: 8,
+              borderRadius: 22,
+              width: 72,
+              height: 72,
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 14,
             }]}
             accessible={true}
             accessibilityRole="image"
-            accessibilityLabel="NearU Campus logo mark"
+            accessibilityLabel="NearU Logo"
           >
-            <GraduationCap size={36} color={isDark ? '#60A5FA' : '#2563EB'} />
+            <NearULogo size={52} />
           </View>
           <Text style={[styles.brandTitle, { color: themeColors.text }]}>NearU</Text>
           <Text style={[styles.brandSubtitle, { color: themeColors.textSecondary }]}>

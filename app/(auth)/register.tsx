@@ -18,6 +18,7 @@ import { Colors } from '../../constants/Colors';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { HapticService } from '../../services/HapticService';
+import { NearULogo } from '../../components/NearULogo';
 import { 
   GraduationCap, 
   Building2, 
@@ -444,6 +445,10 @@ export default function RegisterScreen() {
 
         {/* Intro */}
         <View style={styles.introBlock}>
+          <View style={styles.logoRow}>
+            <NearULogo size={32} />
+            <Text style={[styles.brandText, { color: Colors.brand.accent }]}>NearU</Text>
+          </View>
           <Text style={[styles.title, { color: themeColors.text }]}>Create Account</Text>
           <Text style={[styles.subtitle, { color: themeColors.textSecondary }]}>
             Join the NearU campus marketplace community
@@ -1378,6 +1383,17 @@ const styles = StyleSheet.create({
   },
   introBlock: {
     marginBottom: 20,
+  },
+  logoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 10,
+  },
+  brandText: {
+    fontSize: 18,
+    fontWeight: '900',
+    letterSpacing: -0.4,
   },
   title: {
     fontSize: 26,

@@ -6,26 +6,28 @@ import {
   Pressable,
   Animated,
   useColorScheme,
+  ImageBackground,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../../constants/Colors';
+import { HapticService } from '../../services/HapticService';
 
 interface ServiceGridCardProps {
-  icon: React.ReactNode;
   label: string;
-  badge?: string;
-  color: string;
+  description?: string;
+  imageSource: any;
   onPress?: () => void;
 }
 
 /**
- * Compact card for the quick-access 2×2 service grid.
- * Features scale spring animation on press and NearU accent gradient accent line.
+ * Premium image-backed card for explore services.
+ * Features full bleed generated 3D illustration, elegant linear gradient overlay, 
+ * micro-animations on press, and haptic feedback.
  */
 export const ServiceGridCard: React.FC<ServiceGridCardProps> = ({
-  icon,
   label,
-  badge,
-  color,
+  description,
+  imageSource,
   onPress,
 }) => {
   const systemTheme = useColorScheme() ?? 'light';
@@ -33,10 +35,11 @@ export const ServiceGridCard: React.FC<ServiceGridCardProps> = ({
   const scaleValue = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () => {
+    HapticService.triggerSelection();
     Animated.spring(scaleValue, {
-      toValue: 0.95,
+      toValue: 0.96,
       useNativeDriver: true,
-      speed: 50,
+      speed: 40,
       bounciness: 0,
     }).start();
   };
@@ -45,8 +48,8 @@ export const ServiceGridCard: React.FC<ServiceGridCardProps> = ({
     Animated.spring(scaleValue, {
       toValue: 1,
       useNativeDriver: true,
-      speed: 40,
-      bounciness: 6,
+      speed: 30,
+      bounciness: 4,
     }).start();
   };
 
@@ -57,41 +60,36 @@ export const ServiceGridCard: React.FC<ServiceGridCardProps> = ({
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         style={[
-          styles.card,
+          styles.cardContainer,
           {
-            backgroundColor: systemTheme === 'light' ? '#FFFFFF' : themeColors.surface,
-            borderColor: systemTheme === 'light' ? themeColors.border : themeColors.border,
-            shadowColor: systemTheme === 'light' ? '#0F172A' : '#000000',
-          },
+            borderColor: systemTheme === 'light' ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)',
+          }
         ]}
       >
-        {/* Accent top bar */}
-        <View style={[styles.accentBar, { backgroundColor: color }]} />
-
-        {/* Icon container */}
-        <View
-          style={[
-            styles.iconContainer,
-            { backgroundColor: color + '18' },
-          ]}
+        <ImageBackground
+          source={imageSource}
+          style={styles.imageBg}
+          imageStyle={styles.imageStyle}
         >
-          {icon}
-        </View>
+          {/* Elegant Dark Gradient overlay from bottom to top */}
+          <LinearGradient
+            colors={['rgba(15, 23, 42, 0.92)', 'rgba(15, 23, 42, 0.45)', 'rgba(15, 23, 42, 0.05)']}
+            locations={[0, 0.55, 1]}
+            style={StyleSheet.absoluteFillObject}
+          />
 
-        {/* Label */}
-        <Text
-          style={[styles.label, { color: themeColors.text }]}
-          numberOfLines={1}
-        >
-          {label}
-        </Text>
-
-        {/* Badge */}
-        {badge && (
-          <View style={[styles.badge, { backgroundColor: color + '1A' }]}>
-            <Text style={[styles.badgeText, { color }]}>{badge}</Text>
+          {/* Text Content */}
+          <View style={styles.textContainer}>
+            <Text style={styles.label} numberOfLines={1}>
+              {label}
+            </Text>
+            {description && (
+              <Text style={styles.description} numberOfLines={2}>
+                {description}
+              </Text>
+            )}
           </View>
-        )}
+        </ImageBackground>
       </Pressable>
     </Animated.View>
   );
@@ -99,57 +97,43 @@ export const ServiceGridCard: React.FC<ServiceGridCardProps> = ({
 
 const styles = StyleSheet.create({
   wrapper: {
-    flexBasis: '47%',
-    maxWidth: '50%',
-    margin: 6,
+    width: '48.2%',
+    marginBottom: 12,
   },
-  card: {
-    borderRadius: 18,
+  cardContainer: {
+    borderRadius: 20,
     borderWidth: 1,
-    paddingVertical: 20,
-    paddingHorizontal: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 130,
+    height: 155,
     overflow: 'hidden',
     // Premium soft shadow
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
     shadowRadius: 12,
-    elevation: 3,
+    elevation: 4,
   },
-  accentBar: {
-    position: 'absolute',
-    top: 0,
-    left: 16,
-    right: 16,
-    height: 3,
-    borderBottomLeftRadius: 4,
-    borderBottomRightRadius: 4,
+  imageBg: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'flex-end',
   },
-  iconContainer: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 10,
+  imageStyle: {
+    resizeMode: 'cover',
+  },
+  textContainer: {
+    padding: 12,
+    gap: 3,
   },
   label: {
-    fontSize: 13,
-    fontWeight: '700',
-    textAlign: 'center',
-    letterSpacing: -0.1,
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: -0.2,
   },
-  badge: {
-    marginTop: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  badgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 0.2,
+  description: {
+    color: 'rgba(255, 255, 255, 0.78)',
+    fontSize: 11,
+    fontWeight: '500',
+    lineHeight: 14,
   },
 });

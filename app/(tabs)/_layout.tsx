@@ -1,8 +1,8 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { useColorScheme } from 'react-native';
+import { useColorScheme, Platform } from 'react-native';
 import { Colors } from '../../constants/Colors';
-import { Home, ShoppingBag, User } from 'lucide-react-native';
+import { Home, Bike, User } from 'lucide-react-native';
 
 export default function TabsLayout() {
   const systemTheme = useColorScheme() ?? 'light';
@@ -15,21 +15,26 @@ export default function TabsLayout() {
         tabBarActiveTintColor: Colors.brand.accent,
         tabBarInactiveTintColor: themeColors.tabIconDefault,
         tabBarStyle: {
-          backgroundColor: themeColors.surface,
-          borderTopColor: themeColors.border,
-          borderTopWidth: 1.5,
-          paddingBottom: 8,
+          position: 'absolute',
+          bottom: Platform.OS === 'ios' ? 24 : 16,
+          left: 18,
+          right: 18,
+          borderRadius: 24,
+          height: 66,
+          backgroundColor: systemTheme === 'light' ? 'rgba(255, 255, 255, 0.94)' : 'rgba(15, 23, 42, 0.90)',
+          borderWidth: 1.5,
+          borderColor: systemTheme === 'light' ? 'rgba(226, 232, 240, 0.8)' : 'rgba(46, 158, 191, 0.25)',
+          paddingBottom: Platform.OS === 'ios' ? 4 : 8,
           paddingTop: 8,
-          height: 64,
-          elevation: 8,
+          elevation: 10,
           shadowColor: '#000000',
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.05,
-          shadowRadius: 10,
+          shadowOffset: { width: 0, height: 8 },
+          shadowOpacity: systemTheme === 'light' ? 0.08 : 0.35,
+          shadowRadius: 16,
         },
         tabBarLabelStyle: {
           fontSize: 11,
-          fontWeight: '600',
+          fontWeight: '700',
           marginTop: 2,
         },
       }}
@@ -42,10 +47,10 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="orders"
+        name="rides"
         options={{
-          title: 'Orders',
-          tabBarIcon: ({ color, size }) => <ShoppingBag size={size - 2} color={color} />,
+          title: 'Rides',
+          tabBarIcon: ({ color, size }) => <Bike size={size - 2} color={color} />,
         }}
       />
       <Tabs.Screen
