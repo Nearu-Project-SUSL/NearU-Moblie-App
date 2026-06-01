@@ -1,583 +1,584 @@
-import React, { useState } from 'react';
-import { 
-  StyleSheet, 
-  View, 
-  Text, 
-  TextInput, 
-  ScrollView, 
-  Pressable, 
-  useColorScheme,
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
   FlatList,
-  Image
+  Pressable,
+  Animated,
+  useColorScheme,
+  Dimensions,
+  Platform,
+  TextInput,
 } from 'react-native';
-import { useAuth } from '../../hooks/useAuth';
-import { useLocation } from '../../hooks/useLocation';
-import { Colors } from '../../constants/Colors';
-import { Card } from '../../components/Card';
-import { Button } from '../../components/Button';
-import { ServiceItem, ServiceCategory } from '../../types';
-import { Search, Compass, Star, Clock, MapPin, SlidersHorizontal, Check } from 'lucide-react-native';
-import { Modal } from '../../components/Modal';
+import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  UtensilsCrossed,
+  Bike,
+  Hotel,
+  BriefcaseBusiness,
+  Gift,
+  Tag,
+  MapPin,
+  Bell,
+  Sparkles,
+  ArrowRight,
+  ChevronRight,
+  Search,
+} from 'lucide-react-native';
 
-// High-fidelity mockup student services
-const CAMPUS_SERVICES: ServiceItem[] = [
+import { Colors } from '../../constants/Colors';
+import { useAuth } from '../../hooks/useAuth';
+import { HapticService } from '../../services/HapticService';
+import { NearULogo } from '../../components/NearULogo';
+import { SectionHeader } from '../../components/home/SectionHeader';
+import { ServiceGridCard } from '../../components/home/ServiceGridCard';
+import { DealCard } from '../../components/home/DealCard';
+import { TestimonialCard } from '../../components/home/TestimonialCard';
+import { HotDeal, Testimonial } from '../../types';
+import { LinearGradient } from 'expo-linear-gradient';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
+
+const SERVICES = [
   {
-    id: 'srv_1',
-    title: 'Express Dorm Printing',
-    description: 'Fast, secure laser printing. PDF/Doc review with campus dorm room delivery.',
-    price: 0.15,
-    rating: 4.9,
-    deliveryTimeMinutes: 15,
-    category: 'print',
-    providerName: 'David S. (CS Senior)',
-    isAvailable: true,
-    imageUrl: 'https://images.unsplash.com/photo-1563223552-30d01fda3eca?q=80&w=256&auto=format&fit=crop'
+    id: 'food',
+    label: 'Food Shops',
+    description: 'Local food vendors & canteens',
+    image: require('../../assets/food_service.png'),
   },
   {
-    id: 'srv_2',
-    title: 'Hot Pizza Delivery (SUSL Gate)',
-    description: 'Fresh woodfired local pizza brought directly to campus hostel gates or lecture rooms.',
-    price: 8.99,
-    rating: 4.8,
-    deliveryTimeMinutes: 25,
-    category: 'food',
-    providerName: 'Main Street Bakers',
-    isAvailable: true,
-    imageUrl: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=256&auto=format&fit=crop'
+    id: 'rides',
+    label: 'Uni Rides',
+    description: 'Quick campus commutes',
+    image: require('../../assets/rides_service.png'),
   },
   {
-    id: 'srv_3',
-    title: 'Hostel Laundry Drop & Fold',
-    description: 'Weekly laundry wash and premium press. Drop off at student center, pick up next day.',
-    price: 12.00,
-    rating: 4.7,
-    deliveryTimeMinutes: 1440,
-    category: 'laundry',
-    providerName: 'Dorm Fresh Laundry',
-    isAvailable: true,
-    imageUrl: 'https://images.unsplash.com/photo-1545173168-9f1947e8b94b?q=80&w=256&auto=format&fit=crop'
+    id: 'accommodation',
+    label: 'Accommodations',
+    description: 'Verified student boardings',
+    image: require('../../assets/stays_service.png'),
   },
   {
-    id: 'srv_4',
-    title: 'Quick Library Run / Book Retrieval',
-    description: 'Need books retrieved or items returned? Quick peer helper run across central library blocks.',
-    price: 3.50,
-    rating: 4.9,
-    deliveryTimeMinutes: 20,
-    category: 'errand',
-    providerName: 'Sarah K. (Peer Helper)',
-    isAvailable: true,
-    imageUrl: 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?q=80&w=256&auto=format&fit=crop'
-  }
+    id: 'jobs',
+    label: 'Jobs & Gigs',
+    description: 'Flexible student roles',
+    image: require('../../assets/job_service.png'),
+  },
+  {
+    id: 'gifts',
+    label: 'Gift Shops',
+    description: 'Send surprises & bouquets',
+    image: require('../../assets/gift_service.png'),
+  },
+  {
+    id: 'deals',
+    label: 'Deals Vault',
+    description: 'Exclusive student savings',
+    image: require('../../assets/offer_service.png'),
+  },
+  {
+    id: 'transport',
+    label: 'Transport',
+    description: 'Bus arrival times & Tuk-Tuks',
+    image: require('../../assets/transport_service.png'),
+  },
+  {
+    id: 'bike-rentals',
+    label: 'Bike Rentals',
+    description: 'Rent bicycles around campus',
+    image: require('../../assets/bike_service.png'),
+  },
 ];
 
-export default function BrowseScreen() {
-  const { user } = useAuth();
-  const { location, isOnCampus } = useLocation();
+const HOT_DEALS: HotDeal[] = [
+  {
+    id: 'deal_1',
+    title: 'Campus Food Fiesta',
+    description: 'Get 30% off your first food order from any campus canteen this week.',
+    badge: '30% OFF',
+    badgeColor: '#EF4444',
+    imageUrl: require('../../assets/food_deal.png'),
+  },
+  {
+    id: 'deal_2',
+    title: 'Shared Ride Saver',
+    description: 'Split fare with 2+ riders and save up to Rs.150 on your next campus ride.',
+    badge: 'SAVE RS.150',
+    badgeColor: '#2E9EBF',
+    imageUrl: require('../../assets/ride_deal.png'),
+  },
+  {
+    id: 'deal_3',
+    title: 'Early Bird Boarding',
+    description: 'Book verified rooms before semester starts and get priority listing access.',
+    badge: 'LIMITED',
+    badgeColor: '#10B981',
+    imageUrl: require('../../assets/accommodation_deal.png'),
+  },
+];
+
+const TESTIMONIALS: Testimonial[] = [
+  {
+    id: 'test_1',
+    userName: 'Kasun Perera',
+    userInitial: 'K',
+    message: 'NearU completely changed how I find food on campus. No more walking to the canteen in the rain — the riders bring it right to my faculty!',
+    rating: 5,
+    createdAt: '2 days ago',
+  },
+  {
+    id: 'test_2',
+    userName: 'Nimali Fernando',
+    userInitial: 'N',
+    message: 'Found my boarding room through NearU within a day. The verified reviews from fellow students really helped me feel confident about my choice.',
+    rating: 5,
+    createdAt: '1 week ago',
+  },
+  {
+    id: 'test_3',
+    userName: 'Malith Jayasuriya',
+    userInitial: 'M',
+    message: 'The ride-sharing feature is genius. We split the taxi cost three ways and it works out cheaper than the bus. Love this app!',
+    rating: 4,
+    createdAt: '3 days ago',
+  },
+];
+
+// ── Component ──────────────────────────────────────────────────────────────
+
+export default function HomeScreen() {
+  const router = useRouter();
   const systemTheme = useColorScheme() ?? 'light';
   const themeColors = Colors[systemTheme];
+  const insets = useSafeAreaInsets();
+  const { user } = useAuth();
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<ServiceCategory | 'all'>('all');
-  const [detailsModalVisible, setDetailsModalVisible] = useState(false);
-  const [selectedService, setSelectedService] = useState<ServiceItem | null>(null);
-  const [orderPlaced, setOrderPlaced] = useState(false);
-
-  const categories: { label: string; value: ServiceCategory | 'all' }[] = [
-    { label: 'All', value: 'all' },
-    { label: 'Printouts', value: 'print' },
-    { label: 'Campus Eats', value: 'food' },
-    { label: 'Laundry', value: 'laundry' },
-    { label: 'Errands', value: 'errand' },
-  ];
-
-  const filteredServices = CAMPUS_SERVICES.filter(service => {
-    const matchesSearch = service.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          service.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || service.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
-
-  const handleOpenDetails = (service: ServiceItem) => {
-    setSelectedService(service);
-    setOrderPlaced(false);
-    setDetailsModalVisible(true);
-  };
-
-  const handlePlaceOrder = () => {
-    setOrderPlaced(true);
-    setTimeout(() => {
-      setDetailsModalVisible(false);
-    }, 1500);
-  };
+  const firstName = user?.firstName || 'Student';
+  const greeting = getGreeting();
 
   return (
-    <View style={[styles.container, { backgroundColor: themeColors.background }]}>
-      
-      {/* Top Interactive Brand Navigation Bar */}
-      <View style={[styles.navBar, { borderBottomColor: themeColors.border, backgroundColor: themeColors.surface }]}>
-        <View style={styles.navMain}>
-          <View>
-            <Text style={[styles.greeting, { color: themeColors.textSecondary }]}>
-              Hello, {user?.firstName || 'Student'} 👋
-            </Text>
-            <View style={styles.locationContainer}>
-              <MapPin size={14} color={themeColors.primary} style={styles.locationIcon} />
-              <Text style={[styles.locationName, { color: themeColors.text }]} numberOfLines={1}>
-                {isOnCampus ? location?.campusName : 'Searching for campus GPS...'}
+    <View style={[styles.root, { backgroundColor: themeColors.background }]}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: insets.top },
+        ]}
+      >
+        {/* ── Navigation Header ── */}
+        <View style={styles.navHeader}>
+          <View style={styles.navLeft}>
+            <NearULogo size={56} />
+            <View style={styles.navTextGroup}>
+              <Text style={[styles.navBrand, { color: Colors.brand.accent }]}>
+                NearU
               </Text>
+              <View style={styles.locationRow}>
+                <MapPin size={11} color={themeColors.textMuted} />
+                <Text style={[styles.locationText, { color: themeColors.textMuted }]}>
+                  Sabaragamuwa University
+                </Text>
+              </View>
             </View>
           </View>
-          <View style={[styles.indicatorBadge, { backgroundColor: themeColors.successLight }]}>
-            <View style={[styles.dot, { backgroundColor: themeColors.success }]} />
-            <Text style={[styles.badgeText, { color: themeColors.success }]}>Online</Text>
-          </View>
-        </View>
-
-        {/* Premium Search Bar */}
-        <View style={styles.searchBlock}>
-          <View style={[styles.searchWrapper, { borderColor: themeColors.border, backgroundColor: systemTheme === 'light' ? '#F1F5F9' : '#0F172A' }]}>
-            <Search size={18} color={themeColors.textMuted} style={styles.searchIcon} />
-            <TextInput
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholder="Search food, printing, errands..."
-              placeholderTextColor={themeColors.textMuted}
-              style={[styles.searchInput, { color: themeColors.text }]}
-            />
-          </View>
-          <Pressable style={[styles.filterBtn, { borderColor: themeColors.border, backgroundColor: themeColors.surface }]}>
-            <SlidersHorizontal size={18} color={themeColors.text} />
+          <Pressable
+            style={[
+              styles.notifButton,
+              {
+                backgroundColor: systemTheme === 'light'
+                  ? themeColors.surfaceElevated
+                  : themeColors.surface,
+                borderColor: themeColors.border,
+              },
+            ]}
+          >
+            <Bell size={18} color={themeColors.textSecondary} />
+            {/* Notification dot */}
+            <View style={styles.notifDot} />
           </Pressable>
         </View>
 
-        {/* Scrollable Categories List */}
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoriesScroll}
+        {/* ── Improved Hero Greeting Card (Vibrant LinearGradient) ── */}
+        <LinearGradient
+          colors={systemTheme === 'light' ? ['#2E9EBF', '#156175'] : ['#1C2A30', '#0E171B']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.heroCard}
         >
-          {categories.map((cat, idx) => {
-            const isSelected = selectedCategory === cat.value;
-            return (
-              <Pressable
-                key={idx}
-                onPress={() => setSelectedCategory(cat.value)}
+          <View style={styles.heroContent}>
+            <View style={styles.heroTextGroup}>
+              <Text style={[styles.heroGreeting, { color: '#FFFFFF', opacity: 0.88 }]}>
+                {greeting}
+              </Text>
+              <Text style={[styles.heroName, { color: '#FFFFFF' }]}>
+                {firstName}
+              </Text>
+              <Text style={[styles.heroSubtitle, { color: '#FFFFFF', opacity: 0.75 }]}>
+                What would you like to explore today?
+              </Text>
+            </View>
+            <View
+              style={[
+                styles.heroAvatarContainer,
+                { backgroundColor: 'rgba(255, 255, 255, 0.2)' },
+              ]}
+            >
+              <Text style={styles.heroAvatarText}>
+                {firstName.charAt(0).toUpperCase()}
+              </Text>
+            </View>
+          </View>
+        </LinearGradient>
+
+        {/* ── Quick Services Grid ── */}
+        <View style={styles.section}>
+          <SectionHeader
+            title="Explore Services"
+            subtitle="Premium campus essentials at Sabragamuwa"
+            icon={<Sparkles size={20} color={Colors.brand.accent} />}
+          />
+          <View style={styles.servicesGrid}>
+            {SERVICES.map((service) => (
+              <ServiceGridCard
+                key={service.id}
+                imageSource={service.image}
+                label={service.label}
+                description={service.description}
+                onPress={() => {
+                  HapticService.triggerSelection();
+                  router.push(`/service/${service.id}`);
+                }}
+              />
+            ))}
+          </View>
+        </View>
+
+        {/* ── Hot Deals Carousel ── */}
+        <View style={styles.section}>
+          <SectionHeader
+            title="Hot Deals & Offers"
+            subtitle="Limited time campus exclusives"
+            icon={<Tag size={20} color="#F59E0B" />}
+            rightElement={
+              <Pressable style={styles.viewAllButton}>
+                <Text style={[styles.viewAllText, { color: Colors.brand.accent }]}>
+                  View All
+                </Text>
+                <ChevronRight size={14} color={Colors.brand.accent} />
+              </Pressable>
+            }
+          />
+          <FlatList
+            data={HOT_DEALS}
+            renderItem={({ item }) => <DealCard deal={item} />}
+            keyExtractor={(item) => item.id}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.carouselContainer}
+            snapToInterval={SCREEN_WIDTH * 0.72 + 16}
+            decelerationRate="fast"
+          />
+        </View>
+
+        {/* ── Testimonials Section ── */}
+        <View style={styles.section}>
+          <SectionHeader
+            title="Student Reviews"
+            subtitle="What your peers say about NearU"
+            icon={<Sparkles size={20} color="#EC4899" />}
+          />
+          <FlatList
+            data={TESTIMONIALS}
+            renderItem={({ item }) => <TestimonialCard testimonial={item} />}
+            keyExtractor={(item) => item.id}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.carouselContainer}
+          />
+        </View>
+
+        {/* ── Share CTA Footer ── */}
+        <View style={[styles.section, styles.footerSection]}>
+          <View
+            style={[
+              styles.footerCard,
+              {
+                backgroundColor: systemTheme === 'light'
+                  ? Colors.brand.accent
+                  : 'rgba(46, 158, 191, 0.15)',
+                borderColor: systemTheme === 'light'
+                  ? 'transparent'
+                  : 'rgba(46, 158, 191, 0.2)',
+              },
+            ]}
+          >
+            <View style={styles.footerTextGroup}>
+              <Text
                 style={[
-                  styles.categoryChip,
-                  { 
-                    backgroundColor: isSelected ? themeColors.primary : (systemTheme === 'light' ? '#F1F5F9' : '#1E293B'),
-                    borderColor: isSelected ? themeColors.primary : themeColors.border,
-                  }
+                  styles.footerTitle,
+                  {
+                    color: systemTheme === 'light' ? '#FFFFFF' : Colors.brand.accent,
+                  },
                 ]}
               >
-                <Text 
-                  style={[
-                    styles.categoryChipLabel, 
-                    { 
-                      color: isSelected ? '#FFFFFF' : themeColors.textSecondary,
-                      fontWeight: isSelected ? '700' : '600'
-                    }
-                  ]}
-                >
-                  {cat.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-      </View>
-
-      {/* Main Services List */}
-      <FlatList
-        data={filteredServices}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        renderItem={({ item }) => (
-          <Card 
-            variant="elevated" 
-            style={styles.serviceCard} 
-            onPress={() => handleOpenDetails(item)}
-            padding="none"
-          >
-            <View style={styles.cardLayout}>
-              <Image source={{ uri: item.imageUrl }} style={styles.cardImage} />
-              
-              <View style={styles.cardDetails}>
-                <View style={styles.cardHeaderRow}>
-                  <Text style={[styles.categoryBadge, { color: themeColors.primary, backgroundColor: themeColors.primaryLight }]}>
-                    {item.category.toUpperCase()}
-                  </Text>
-                  <View style={styles.ratingRow}>
-                    <Star size={12} color="#F59E0B" fill="#F59E0B" />
-                    <Text style={[styles.ratingVal, { color: themeColors.text }]}>{item.rating}</Text>
-                  </View>
-                </View>
-
-                <Text style={[styles.serviceTitle, { color: themeColors.text }]} numberOfLines={1}>
-                  {item.title}
-                </Text>
-                
-                <Text style={[styles.serviceDesc, { color: themeColors.textSecondary }]} numberOfLines={2}>
-                  {item.description}
-                </Text>
-
-                <View style={styles.cardFooter}>
-                  <Text style={[styles.priceTag, { color: themeColors.text }]}>
-                    ${item.price.toFixed(2)}
-                  </Text>
-                  <View style={styles.metaRow}>
-                    <Clock size={12} color={themeColors.textMuted} style={styles.metaIcon} />
-                    <Text style={[styles.metaText, { color: themeColors.textSecondary }]}>
-                      {item.deliveryTimeMinutes >= 60 
-                        ? `${Math.round(item.deliveryTimeMinutes / 60)} hrs` 
-                        : `${item.deliveryTimeMinutes} mins`}
-                    </Text>
-                  </View>
-                </View>
-              </View>
+                Enjoying NearU? ✨
+              </Text>
+              <Text
+                style={[
+                  styles.footerSubtitle,
+                  {
+                    color: systemTheme === 'light'
+                      ? 'rgba(255,255,255,0.85)'
+                      : themeColors.textSecondary,
+                  },
+                ]}
+              >
+                Share your experience and help fellow students discover campus services.
+              </Text>
             </View>
-          </Card>
-        )}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Compass size={48} color={themeColors.textMuted} style={styles.emptyIcon} />
-            <Text style={[styles.emptyTitle, { color: themeColors.text }]}>No services found</Text>
-            <Text style={[styles.emptySubtitle, { color: themeColors.textSecondary }]}>
-              Try searching for something else or adjusting your category filter.
-            </Text>
+            <Pressable
+              style={[
+                styles.footerButton,
+                {
+                  backgroundColor: systemTheme === 'light'
+                    ? 'rgba(255,255,255,0.2)'
+                    : Colors.brand.accent,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.footerButtonText,
+                  { color: '#FFFFFF' },
+                ]}
+              >
+                Share
+              </Text>
+              <ArrowRight size={14} color="#FFFFFF" />
+            </Pressable>
           </View>
-        }
-      />
+        </View>
 
-      {/* Details Sheet Modal */}
-      {selectedService && (
-        <Modal
-          visible={detailsModalVisible}
-          onClose={() => setDetailsModalVisible(false)}
-          title="Service Details"
-          height={480}
-        >
-          {orderPlaced ? (
-            <View style={styles.successWrapper}>
-              <View style={[styles.successCircle, { backgroundColor: themeColors.successLight }]}>
-                <Check size={36} color={themeColors.success} />
-              </View>
-              <Text style={[styles.successTitle, { color: themeColors.text }]}>Order Placed!</Text>
-              <Text style={[styles.successSubtitle, { color: themeColors.textSecondary }]}>
-                Your request has been sent to {selectedService.providerName}.
-              </Text>
-            </View>
-          ) : (
-            <View style={styles.modalContent}>
-              <Image source={{ uri: selectedService.imageUrl }} style={styles.modalImage} />
-              <View style={styles.modalMeta}>
-                <Text style={[styles.categoryBadge, { color: themeColors.primary, backgroundColor: themeColors.primaryLight }]}>
-                  {selectedService.category.toUpperCase()}
-                </Text>
-                <View style={styles.ratingRow}>
-                  <Star size={14} color="#F59E0B" fill="#F59E0B" />
-                  <Text style={[styles.ratingVal, { color: themeColors.text, fontSize: 14 }]}>{selectedService.rating}</Text>
-                </View>
-              </View>
-              
-              <Text style={[styles.modalTitle, { color: themeColors.text }]}>{selectedService.title}</Text>
-              <Text style={[styles.modalProvider, { color: themeColors.textSecondary }]}>
-                Offered by: <Text style={{ fontWeight: '600' }}>{selectedService.providerName}</Text>
-              </Text>
-              <Text style={[styles.modalDesc, { color: themeColors.textSecondary }]}>
-                {selectedService.description}
-              </Text>
-
-              <View style={styles.modalDivider} />
-
-              <View style={styles.modalFooterRow}>
-                <View>
-                  <Text style={[styles.priceLabel, { color: themeColors.textMuted }]}>Total Price</Text>
-                  <Text style={[styles.modalPrice, { color: themeColors.text }]}>${selectedService.price.toFixed(2)}</Text>
-                </View>
-                <Button 
-                  title="Confirm & Request" 
-                  onPress={handlePlaceOrder} 
-                  variant="primary" 
-                  style={styles.modalOrderBtn} 
-                />
-              </View>
-            </View>
-          )}
-        </Modal>
-      )}
-
+        {/* Bottom safe area spacing adjusted for floating bottom navigation tab bar */}
+        <View style={{ height: insets.bottom + 90 }} />
+      </ScrollView>
     </View>
   );
 }
 
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good Morning';
+  if (hour < 17) return 'Good Afternoon';
+  return 'Good Evening';
+}
+
+// ── Styles ──────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
   },
-  navBar: {
-    paddingTop: 54,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomRightRadius: 20,
-    borderBottomLeftRadius: 20,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.03,
-    shadowRadius: 10,
-    elevation: 3,
+  scrollContent: {
+    paddingBottom: 16,
   },
-  navMain: {
+
+  // ── Navigation Header ──
+  navHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 8,
   },
-  greeting: {
-    fontSize: 13,
+  navLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  navTextGroup: {
+    gap: 1,
+  },
+  navBrand: {
+    fontSize: 20,
+    fontWeight: '900',
+    letterSpacing: -0.5,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  locationText: {
+    fontSize: 11,
     fontWeight: '600',
   },
-  locationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 2,
-    maxWidth: 220,
-  },
-  locationIcon: {
-    marginRight: 4,
-  },
-  locationName: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  indicatorBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 8,
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 6,
-  },
-  badgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  searchBlock: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  searchWrapper: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 12,
+  notifButton: {
+    width: 40,
     height: 40,
-    marginRight: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  notifDot: {
+    position: 'absolute',
+    top: 8,
+    right: 9,
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: '#EF4444',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+  },
+
+  // ── Hero Card ──
+  heroCard: {
+    marginHorizontal: 20,
+    marginTop: 16,
+    borderRadius: 22,
+    borderWidth: 1,
+    padding: 22,
+    overflow: 'hidden',
+  },
+  heroAccentLine: {
+    position: 'absolute',
+    top: 0,
+    left: 24,
+    right: 24,
+    height: 3,
+    borderBottomLeftRadius: 4,
+    borderBottomRightRadius: 4,
+    backgroundColor: Colors.brand.accent,
+  },
+  heroContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  heroTextGroup: {
+    flex: 1,
+    marginRight: 16,
+  },
+  heroGreeting: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  heroName: {
+    fontSize: 28,
+    fontWeight: '900',
+    letterSpacing: -0.5,
+    marginBottom: 6,
+  },
+  heroSubtitle: {
+    fontSize: 13,
+    fontWeight: '500',
+    lineHeight: 18,
+  },
+  heroAvatarContainer: {
+    width: 52,
+    height: 52,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroAvatarText: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    fontWeight: '900',
+  },
+
+  // ── Sections ──
+  section: {
+    marginTop: 28,
+    paddingHorizontal: 20,
+  },
+  servicesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginTop: 10,
+  },
+
+  // ── Carousels ──
+  carouselContainer: {
+    paddingLeft: 0,
+    paddingRight: 20,
+  },
+
+  // ── View All Button ──
+  viewAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  viewAllText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+
+  // ── Footer CTA ──
+  footerSection: {
+    marginTop: 32,
+  },
+  footerCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 22,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  footerTextGroup: {
+    flex: 1,
+    marginRight: 14,
+  },
+  footerTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  footerSubtitle: {
+    fontSize: 12,
+    fontWeight: '500',
+    lineHeight: 17,
+  },
+  footerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    gap: 6,
+  },
+  footerButtonText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    height: 44,
+    marginTop: 16,
   },
   searchIcon: {
     marginRight: 8,
   },
   searchInput: {
     flex: 1,
-    fontSize: 14,
-    height: '100%',
-  },
-  filterBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  categoriesScroll: {
-    paddingBottom: 16,
-  },
-  categoryChip: {
-    paddingVertical: 6,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    borderWidth: 1,
-    marginRight: 8,
-  },
-  categoryChipLabel: {
-    fontSize: 12,
-  },
-  listContent: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  serviceCard: {
-    marginBottom: 16,
-  },
-  cardLayout: {
-    flexDirection: 'row',
-  },
-  cardImage: {
-    width: 100,
-    height: '100%',
-    minHeight: 110,
-    backgroundColor: '#E2E8F0',
-  },
-  cardDetails: {
-    flex: 1,
-    padding: 12,
-    justifyContent: 'space-between',
-  },
-  cardHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  categoryBadge: {
-    fontSize: 9,
-    fontWeight: '800',
-    paddingVertical: 2,
-    paddingHorizontal: 6,
-    borderRadius: 4,
-    letterSpacing: 0.5,
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  ratingVal: {
-    fontSize: 12,
-    fontWeight: '700',
-    marginLeft: 3,
-  },
-  serviceTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    marginTop: 4,
-  },
-  serviceDesc: {
-    fontSize: 12,
-    marginTop: 2,
-    lineHeight: 16,
-  },
-  cardFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 6,
-  },
-  priceTag: {
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  metaIcon: {
-    marginRight: 4,
-  },
-  metaText: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 64,
-    paddingHorizontal: 32,
-  },
-  emptyIcon: {
-    marginBottom: 16,
-  },
-  emptyTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 6,
-  },
-  emptySubtitle: {
     fontSize: 13,
-    textAlign: 'center',
-    lineHeight: 18,
-  },
-  modalContent: {
-    flex: 1,
-  },
-  modalImage: {
-    width: '100%',
-    height: 140,
-    borderRadius: 12,
-    marginBottom: 12,
-    backgroundColor: '#E2E8F0',
-  },
-  modalMeta: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    marginBottom: 4,
-  },
-  modalProvider: {
-    fontSize: 13,
-    marginBottom: 8,
-  },
-  modalDesc: {
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  modalDivider: {
-    height: 1,
-    backgroundColor: 'rgba(148, 163, 184, 0.1)',
-    marginVertical: 14,
-  },
-  modalFooterRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 'auto',
-  },
-  priceLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  modalPrice: {
-    fontSize: 22,
-    fontWeight: '800',
-  },
-  modalOrderBtn: {
-    width: 170,
-  },
-  successWrapper: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 32,
-  },
-  successCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 18,
-  },
-  successTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    marginBottom: 6,
-  },
-  successSubtitle: {
-    fontSize: 13,
-    textAlign: 'center',
+    fontWeight: '500',
   },
 });

@@ -70,3 +70,33 @@ export interface ApiResponse<T> {
   message?: string;
   errors?: string[];
 }
+
+// ── Homepage Types ──────────────────────────────────────────────────────────
+
+export interface HotDeal {
+  id: string;
+  title: string;
+  description: string;
+  badge: string;
+  badgeColor: string;
+  imageUrl?: string;
+}
+
+export interface Testimonial {
+  id: string;
+  userName: string;
+  userInitial: string;
+  message: string;
+  rating: number;
+  createdAt: string;
+}
+
+export interface HomeService {
+  id: string;
+  label: string;
+  description: string;
+  iconName: string;
+  badge?: string;
+  color: string;
+}
+
