@@ -18,6 +18,7 @@ interface AuthContextType {
   verifyStudentId: (studentCardNumber: string) => Promise<{ success: boolean; error?: string }>;
   requestPasswordReset: (email: string) => Promise<{ success: boolean; error?: string }>;
   resetPassword: (email: string, code: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
+  updateUser: (updatedFields: Partial<User>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -424,6 +425,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateUser = async (updatedFields: Partial<User>) => {
+    if (!user) return;
+    const newUser = { ...user, ...updatedFields };
+    setUser(newUser);
+    await SecureStore.setItemAsync('userData', JSON.stringify(newUser));
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -440,6 +448,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         verifyStudentId,
         requestPasswordReset,
         resetPassword,
+        updateUser,
       }}
     >
       {children}

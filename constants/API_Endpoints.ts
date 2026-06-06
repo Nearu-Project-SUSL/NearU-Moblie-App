@@ -36,9 +36,10 @@ export const API_ENDPOINTS = {
   
   // Student Profile Settings
   PROFILE: {
-    GET: `${API_BASE_URL}/profile`,
-    UPDATE: `${API_BASE_URL}/profile/update`,
-    UPDATE_AVATAR: `${API_BASE_URL}/profile/avatar`,
+    GET: (userId: string) => `${API_BASE_URL}/User/${userId}`,
+    UPDATE: (userId: string) => `${API_BASE_URL}/User/${userId}/profile`,
+    UPDATE_AVATAR: (userId: string) => `${API_BASE_URL}/User/${userId}/profile-picture`,
+    DELETE: (userId: string) => `${API_BASE_URL}/User/${userId}`,
   },
 
   // Geolocation & Campus Location check
