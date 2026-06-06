@@ -12,7 +12,9 @@ import {
   Alert,
   Switch,
   Platform,
+  Appearance,
 } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
 import { useAuth } from '../../hooks/useAuth';
 import { useProfile } from '../../hooks/useProfile';
 import { Colors } from '../../constants/Colors';
@@ -29,23 +31,20 @@ import {
   MapPin,
   Lock,
   ShieldCheck,
-  ShieldAlert,
   LogOut,
-  Store,
   ChevronRight,
   Camera,
   Trash2,
   HelpCircle,
   Settings,
   Sparkles,
-  CheckCircle2,
   ArrowRight,
   Eye,
   EyeOff,
 } from 'lucide-react-native';
 
 export default function ProfileScreen() {
-  const { user, verifyStudentId, logout } = useAuth();
+  const { user, logout } = useAuth();
   const systemTheme = useColorScheme() ?? 'light';
   const themeColors = Colors[systemTheme];
 
@@ -64,12 +63,6 @@ export default function ProfileScreen() {
     deleteAccount,
   } = useProfile();
 
-  // Student ID Verification States
-  const [studentCardNum, setStudentCardNum] = useState('');
-  const [showVerifyInput, setShowVerifyInput] = useState(false);
-  const [verifyError, setVerifyError] = useState<string | null>(null);
-  const [verifySuccess, setVerifySuccess] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(false);
 
   // Modal States
   const [passwordModalVisible, setPasswordModalVisible] = useState(false);
@@ -116,28 +109,6 @@ export default function ProfileScreen() {
     setDeletePhrase('');
     setDeletePassword('');
     setDeleteCountdown(3);
-  };
-
-  // Student verification handler
-  const handleVerifyId = async () => {
-    if (!studentCardNum) {
-      setVerifyError('Please enter your card number.');
-      return;
-    }
-    setVerifyError(null);
-    setIsVerifying(true);
-    const result = await verifyStudentId(studentCardNum);
-    setIsVerifying(false);
-    if (result.success) {
-      setVerifySuccess(true);
-      setTimeout(() => {
-        setShowVerifyInput(false);
-        setVerifySuccess(false);
-        setStudentCardNum('');
-      }, 1500);
-    } else {
-      setVerifyError(result.error || 'Verification failed.');
-    }
   };
 
   // Update profile image handler
@@ -211,6 +182,17 @@ export default function ProfileScreen() {
   // Static options alerts
   const handleComingSoon = (title: string, message: string) => {
     Alert.alert(title, message);
+  };
+
+  // Dynamic manual theme toggle
+  const handleToggleTheme = async (isDark: boolean) => {
+    const newTheme = isDark ? 'dark' : 'light';
+    Appearance.setColorScheme(newTheme);
+    try {
+      await SecureStore.setItemAsync('user-theme', newTheme);
+    } catch (e) {
+      console.log('Error saving theme configuration:', e);
+    }
   };
 
   if (isProfileLoading) {
@@ -330,89 +312,6 @@ export default function ProfileScreen() {
           </LinearGradient>
         )}
 
-        {/* Verification Card (Only for logged-in students) */}
-        {!isGuest && profile?.role === 'Student' && (
-          <Card variant="bordered" style={styles.sectionCard}>
-            {user?.isStudentVerified ? (
-              <View style={styles.verifiedRow}>
-                <ShieldCheck size={28} color={themeColors.success} style={{ marginRight: 14 }} />
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.verifyTitle, { color: themeColors.text }]}>Verified Student ID</Text>
-                  <Text style={[styles.verifyDesc, { color: themeColors.textSecondary }]}>
-                    Your Sabaragamuwa University card ({profile.studentId}) is verified. You can transact on the student marketplace!
-                  </Text>
-                </View>
-              </View>
-            ) : (
-              <View>
-                <View style={styles.verifiedRow}>
-                  <ShieldAlert size={28} color={themeColors.warning} style={{ marginRight: 14 }} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.verifyTitle, { color: themeColors.text }]}>Verify Student ID</Text>
-                    <Text style={[styles.verifyDesc, { color: themeColors.textSecondary }]}>
-                      Unlock marketplace operations (selling prints, rides, food) by linking your campus ID card.
-                    </Text>
-                  </View>
-                </View>
-
-                {!showVerifyInput ? (
-                  <Button
-                    title="Verify ID Card Now"
-                    onPress={() => setShowVerifyInput(true)}
-                    variant="primary"
-                    size="small"
-                    style={styles.verifyBtn}
-                  />
-                ) : (
-                  <View style={styles.verifyInputWrapper}>
-                    {verifySuccess ? (
-                      <View style={styles.successWrapper}>
-                        <CheckCircle2 size={16} color={themeColors.success} style={{ marginRight: 6 }} />
-                        <Text style={[styles.successText, { color: themeColors.success }]}>Successfully Verified!</Text>
-                      </View>
-                    ) : (
-                      <>
-                        <TextInput
-                          value={studentCardNum}
-                          onChangeText={setStudentCardNum}
-                          placeholder="Enter Student ID (e.g. STU-2026-904)"
-                          placeholderTextColor={themeColors.textMuted}
-                          style={[
-                            styles.textInput,
-                            {
-                              color: themeColors.text,
-                              borderColor: themeColors.border,
-                              backgroundColor: systemTheme === 'light' ? '#F8FAFC' : '#0F172A',
-                            },
-                          ]}
-                        />
-                        {verifyError && <Text style={[styles.errorText, { color: themeColors.danger }]}>{verifyError}</Text>}
-                        <View style={styles.verifyActions}>
-                          <Button
-                            title="Cancel"
-                            onPress={() => {
-                              setShowVerifyInput(false);
-                              setVerifyError(null);
-                            }}
-                            variant="secondary"
-                            size="small"
-                            style={{ marginRight: 8 }}
-                          />
-                          <Button
-                            title="Verify"
-                            onPress={handleVerifyId}
-                            loading={isVerifying}
-                            size="small"
-                          />
-                        </View>
-                      </>
-                    )}
-                  </View>
-                )}
-              </View>
-            )}
-          </Card>
-        )}
 
         {/* ── Section: Personal Information ── */}
         <Text style={[styles.sectionTitle, { color: themeColors.textSecondary }]}>Personal Information</Text>
@@ -619,31 +518,10 @@ export default function ProfileScreen() {
               </View>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Text style={{ fontSize: 11, color: themeColors.textMuted, marginRight: 8 }}>System Sync</Text>
-              <Switch value={systemTheme === 'dark'} disabled />
+              <Switch value={systemTheme === 'dark'} onValueChange={handleToggleTheme} />
             </View>
           </View>
 
-          {/* Seller Registration Portal */}
-          <Pressable
-            onPress={() => handleComingSoon('Seller Portal', 'Seller and Merchant registrations can be managed on the NearU web platform at https://nearusab.me.')}
-            style={({ pressed }) => [
-              styles.settingsRow,
-              { borderBottomColor: themeColors.border },
-              pressed && { backgroundColor: systemTheme === 'light' ? '#F8FAFC' : '#253041' },
-            ]}
-          >
-            <View style={styles.settingsRowLeft}>
-              <View style={[styles.settingsIconBg, { backgroundColor: systemTheme === 'light' ? '#F1F5F9' : '#0F172A' }]}>
-                <Store size={18} color={themeColors.primary} />
-              </View>
-              <View>
-                <Text style={[styles.settingsLabel, { color: themeColors.text }]}>Seller Portal</Text>
-                <Text style={[styles.settingsSub, { color: themeColors.textSecondary }]}>Register canteens, print shops, Tuk-Tuks</Text>
-              </View>
-            </View>
-            <ChevronRight size={18} color={themeColors.textMuted} />
-          </Pressable>
 
           {/* Help & Support Desk */}
           <Pressable

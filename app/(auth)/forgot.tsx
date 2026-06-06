@@ -13,6 +13,7 @@ import {
   Animated
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../hooks/useAuth';
 import { Colors } from '../../constants/Colors';
 import { Button } from '../../components/Button';
@@ -35,6 +36,7 @@ type ResetStep = 0 | 1 | 2 | 3; // 0: Email request, 1: OTP verification, 2: New
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { requestPasswordReset, resetPassword } = useAuth();
   const systemTheme = useColorScheme() ?? 'dark';
   const themeColors = Colors[systemTheme];
@@ -278,7 +280,10 @@ export default function ForgotPasswordScreen() {
 
       <ScrollView 
         style={{ flex: 1, zIndex: 1 }}
-        contentContainerStyle={styles.scrollContent} 
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: insets.top + 16 }
+        ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
@@ -294,6 +299,7 @@ export default function ForgotPasswordScreen() {
               }
             }} 
             style={styles.backBtn}
+            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
             accessible={true}
             accessibilityRole="button"
             accessibilityLabel="Back link button"
