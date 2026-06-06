@@ -21,10 +21,12 @@ import { HapticService } from '../../services/HapticService';
 import { GoogleIcon } from '../../components/GoogleIcon';
 import { NearULogo } from '../../components/NearULogo';
 import { KeyRound, Mail, Eye, EyeOff, Sparkles, AlertCircle, UserPlus } from 'lucide-react-native';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const systemTheme = useColorScheme() ?? 'dark'; // Fallback to dark for premium look
   const themeColors = Colors[systemTheme];
   const isDark = systemTheme === 'dark';
@@ -154,14 +156,76 @@ export default function LoginScreen() {
     }
   };
 
-  const handleGoogleMockLogin = () => {
-    setStatusMsg({
-      text: 'Google authentication requires native configurations. Logging in with a guest student account.',
-      type: 'warning'
-    });
-    setTimeout(() => {
-      handleGuestLogin();
-    }, 2000);
+  const handleGoogleLogin = async () => {
+    // Detect if running in Expo Go (native Google SDK isn't linked/available in Expo Go)
+    const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+    
+    if (isExpoGo) {
+      HapticService.triggerSelection();
+      setStatusMsg({
+        text: 'Google Sign-in requires native configurations. Logging in with a guest student account.',
+        type: 'warning'
+      });
+      setTimeout(() => {
+        handleGuestLogin();
+      }, 3000);
+      return;
+    }
+
+    try {
+      HapticService.triggerTap();
+      setStatusMsg(null);
+      setIsSubmitting(true);
+
+      // Verify Google Play Services is available
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+      
+      // Sign in
+      const response = await GoogleSignin.signIn();
+      const idToken = response.data?.idToken;
+
+      if (!idToken) {
+        throw new Error('No ID Token received from Google Sign-in.');
+      }
+
+      const googleUser = response.data?.user;
+      
+      // Perform context login
+      const result = await loginWithGoogle(idToken, googleUser);
+      setIsSubmitting(false);
+
+      if (result.success) {
+        HapticService.triggerSuccess();
+        if (result.error) {
+          // Warning/Notice about local mock mode
+          setStatusMsg({ text: result.error, type: 'warning' });
+          setTimeout(() => {
+            router.replace('/(tabs)/browse');
+          }, 2500);
+        } else {
+          setStatusMsg({ text: 'Sign in successful! Welcome to campus.', type: 'success' });
+          setTimeout(() => {
+            router.replace('/(tabs)/browse');
+          }, 800);
+        }
+      } else {
+        HapticService.triggerError();
+        setStatusMsg({ text: result.error || 'Google login failed.', type: 'error' });
+      }
+    } catch (error: any) {
+      setIsSubmitting(false);
+      HapticService.triggerError();
+      
+      if (error.code === 'SIGN_IN_CANCELLED') {
+        setStatusMsg({ text: 'Google Sign-in cancelled by user.', type: 'warning' });
+      } else if (error.code === 'IN_PROGRESS') {
+        setStatusMsg({ text: 'Google Sign-in is already in progress.', type: 'warning' });
+      } else if (error.code === 'PLAY_SERVICES_NOT_AVAILABLE') {
+        setStatusMsg({ text: 'Google Play Services not available or outdated.', type: 'error' });
+      } else {
+        setStatusMsg({ text: error.message || 'Google Sign-in failed.', type: 'error' });
+      }
+    }
   };
 
   return (
@@ -426,7 +490,7 @@ export default function LoginScreen() {
           {/* Social and Guest Access Buttons */}
           <View style={styles.row}>
             <Pressable 
-              onPress={handleGoogleMockLogin} 
+              onPress={handleGoogleLogin} 
               style={[
                 styles.socialBtn, 
                 { 
