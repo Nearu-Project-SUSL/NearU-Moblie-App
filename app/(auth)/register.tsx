@@ -13,6 +13,7 @@ import {
   Animated
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../hooks/useAuth';
 import { Colors } from '../../constants/Colors';
 import { Button } from '../../components/Button';
@@ -45,6 +46,7 @@ type StudentStep = 0 | 1 | 2;
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { registerStudent, registerBusiness, registerRider } = useAuth();
   const systemTheme = useColorScheme() ?? 'dark';
   const themeColors = Colors[systemTheme];
@@ -423,7 +425,10 @@ export default function RegisterScreen() {
 
       <ScrollView 
         style={{ flex: 1, zIndex: 1 }}
-        contentContainerStyle={styles.scrollContent} 
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: insets.top + 16 }
+        ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
@@ -434,6 +439,7 @@ export default function RegisterScreen() {
             router.replace('/(auth)/login');
           }} 
           style={styles.backBtn}
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
           accessible={true}
           accessibilityRole="button"
           accessibilityLabel="Back link button"
@@ -1420,11 +1426,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingVertical: 12,
     marginHorizontal: 4,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
   },
   roleIconBg: {
     width: 38,

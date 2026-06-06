@@ -70,6 +70,8 @@ export const Button: React.FC<ButtonProps> = ({
           button: {
             backgroundColor: systemTheme === 'light' ? themeColors.background : '#334155',
             borderWidth: 0,
+            elevation: 0,
+            shadowOpacity: 0,
           },
           text: { color: themeColors.text },
         };
@@ -79,6 +81,8 @@ export const Button: React.FC<ButtonProps> = ({
             backgroundColor: 'transparent',
             borderWidth: 1.5,
             borderColor: themeColors.border,
+            elevation: 0,
+            shadowOpacity: 0,
           },
           text: { color: themeColors.text },
         };
