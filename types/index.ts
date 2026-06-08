@@ -100,3 +100,71 @@ export interface HomeService {
   color: string;
 }
 
+// ── Job Section Types ────────────────────────────────────────────────────────
+
+export interface PostedByInfo {
+  userId: string;
+  name: string;
+  email: string;
+  avatar: string | null;
+  mobileNumber?: string;
+}
+
+export interface JobResponse {
+  id: string;
+  title: string;
+  company: string;
+  location: string;
+  payRange: string;
+  jobType: string;
+  category: string;
+  logo: string | null;
+  description: string;
+  longDescription: string | null;
+  requirements: string[] | null;
+  tags: string[] | null;
+  isNew: boolean;
+  postedBy: PostedByInfo;
+  createdAt: string;
+  postedAt?: string;
+}
+
+export interface PagedJobResponse {
+  items: JobResponse[];
+  totalCount: number;
+  totalPages: number;
+  currentPage: number;
+  pageSize: number;
+}
+
+export interface CreateJobData {
+  title: string;
+  company: string;
+  location: string;
+  payRange: string;
+  jobType: string;
+  category: string;
+  logo?: string;
+  description: string;
+  longDescription?: string;
+  requirements?: string[];
+  tags?: string[];
+  isNew?: boolean;
+}
+
+export interface UpdateJobData {
+  title?: string;
+  company?: string;
+  location?: string;
+  payRange?: string;
+  jobType?: string;
+  category?: string;
+  logo?: string;
+  description?: string;
+  longDescription?: string;
+  requirements?: string[];
+  tags?: string[];
+  isNew?: boolean;
+}
+
+

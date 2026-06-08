@@ -46,5 +46,19 @@ export const API_ENDPOINTS = {
   LOCATION: {
     VERIFY_CAMPUS: `${API_BASE_URL}/location/verify-campus`,
     NEARBY_PROVIDERS: `${API_BASE_URL}/location/nearby`,
+  },
+
+  // Career Hub & Gigs Gateway
+  JOBS: {
+    LIST: `${API_BASE_URL}/job`,
+    NEW: `${API_BASE_URL}/job/new`,
+    CATEGORY: (category: string) => `${API_BASE_URL}/job/category/${category}`,
+    TYPE: (jobType: string) => `${API_BASE_URL}/job/type/${jobType}`,
+    SEARCH: `${API_BASE_URL}/job/search`,
+    DETAILS: (id: string) => `${API_BASE_URL}/job/${id}`,
+    CREATE: `${API_BASE_URL}/job`,
+    UPDATE: (id: string) => `${API_BASE_URL}/job/${id}`,
+    DELETE: (id: string) => `${API_BASE_URL}/job/${id}`,
   }
 };
+
