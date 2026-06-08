@@ -247,8 +247,12 @@ export default function HomeScreen() {
                 label={service.label}
                 description={service.description}
                 onPress={() => {
+                   if (service.id === 'food') {
+                    router.push('/food')
+                  } else{
                   HapticService.triggerSelection();
                   router.push(`/service/${service.id}`);
+                  }
                 }}
               />
             ))}
