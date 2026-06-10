@@ -35,6 +35,7 @@ import {
 import { Colors } from '../../constants/Colors';
 import { HapticService } from '../../services/HapticService';
 import { LinearGradient } from 'expo-linear-gradient';
+import { JobsDashboard } from '../../components/jobs/JobsDashboard';
 
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -362,55 +363,7 @@ export default function ServiceDetailScreen() {
 
         {/* 4. JOBS SERVICE PAGE */}
         {id === 'jobs' && (
-          <View style={styles.detailSection}>
-            <Text style={[styles.sectionTitle, { color: themeColors.text }]}>Active Campus Gigs</Text>
-            
-            {[
-              { role: 'Computer Lab Assistant', dept: 'Faculty of Computing', pay: 'Rs. 500/hr', hours: '12 hrs/week', tag: 'Academic' },
-              { role: 'Content Writer Helper', dept: 'Student Union Hub', pay: 'Rs. 4,000/gig', hours: 'Flexible', tag: 'Creative' },
-              { role: 'Campus Cafe Barista', dept: 'Central Canteen', pay: 'Rs. 350/hr + Meals', hours: '15 hrs/week', tag: 'Service' },
-            ].map((gig, index) => (
-              <Pressable
-                key={index}
-                onPress={() => {
-                  HapticService.triggerTap();
-                  setSelectedSubService(gig.role);
-                }}
-                style={[styles.vendorCard, { backgroundColor: systemTheme === 'light' ? '#FFFFFF' : themeColors.surface, borderColor: themeColors.border }]}
-              >
-                <View style={styles.vendorHeader}>
-                  <Text style={[styles.vendorName, { color: themeColors.text }]}>{gig.role}</Text>
-                  <View style={[styles.gigTag, { backgroundColor: service.themeColor + '1F' }]}>
-                    <Text style={[styles.gigTagText, { color: service.themeColor }]}>{gig.tag}</Text>
-                  </View>
-                </View>
-                <Text style={{ color: themeColors.textSecondary, fontSize: 12, marginTop: 2 }}>{gig.dept}</Text>
-                
-                <View style={[styles.vendorStats, { marginTop: 10 }]}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                    <DollarSign size={13} color={themeColors.textSecondary} />
-                    <Text style={{ color: themeColors.textSecondary, fontSize: 12, fontWeight: '600' }}>{gig.pay}</Text>
-                  </View>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                    <Clock size={13} color={themeColors.textMuted} />
-                    <Text style={{ color: themeColors.textMuted, fontSize: 12 }}>{gig.hours}</Text>
-                  </View>
-                </View>
-
-                {selectedSubService === gig.role && (
-                  <Pressable 
-                    onPress={() => {
-                      HapticService.triggerSuccess();
-                      alert('Application submitted! Department reviewer will contact you.');
-                    }}
-                    style={[styles.bookingConfirmBtn, { backgroundColor: service.themeColor }]}
-                  >
-                    <Text style={styles.bookingConfirmText}>Apply Instantly</Text>
-                  </Pressable>
-                )}
-              </Pressable>
-            ))}
-          </View>
+          <JobsDashboard searchQuery={searchQuery} />
         )}
 
         {/* 5. GIFTS SERVICE PAGE */}
