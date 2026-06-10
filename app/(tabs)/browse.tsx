@@ -39,6 +39,8 @@ import { TestimonialCard } from '../../components/home/TestimonialCard';
 import { HotDeal, Testimonial } from '../../types';
 import { LinearGradient } from 'expo-linear-gradient';
 
+
+
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 const SERVICES = [
