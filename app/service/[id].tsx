@@ -37,6 +37,7 @@ import { HapticService } from '../../services/HapticService';
 import { LinearGradient } from 'expo-linear-gradient';
 import { JobsDashboard } from '../../components/jobs/JobsDashboard';
 
+
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 // ── Service Details Mock Data ──────────────────────────────────────────────
@@ -200,8 +201,9 @@ export default function ServiceDetailScreen() {
                 key={index}
                 onPress={() => {
                   HapticService.triggerTap();
-                  setSelectedSubService(vendor.name);
+                  router.push('/food');
                 }}
+
                 style={[styles.vendorCard, { backgroundColor: systemTheme === 'light' ? '#FFFFFF' : themeColors.surface, borderColor: themeColors.border }]}
               >
                 <View style={styles.vendorHeader}>

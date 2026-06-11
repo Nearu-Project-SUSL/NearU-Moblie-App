@@ -4,6 +4,8 @@ import { apiRequest, setStoredTokens } from '../services/api';
 import { API_ENDPOINTS, API_BASE_URL } from '../constants/API_Endpoints';
 import * as SecureStore from 'expo-secure-store';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { Platform } from 'react-native';
+
 
 // Initialize Google Sign-In SDK
 GoogleSignin.configure({
@@ -65,6 +67,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const loadSession = async () => {
       try {
+        if (Platform.OS === 'web') {
+          return; // SecureStore not supported on web
+        }
         const token = await SecureStore.getItemAsync('authToken');
         const refresh = await SecureStore.getItemAsync('refreshToken');
         const userDataStr = await SecureStore.getItemAsync('userData');
@@ -81,6 +86,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     loadSession();
   }, []);
+
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
@@ -108,6 +114,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
           setUser(mockUser);
           setStoredTokens(apiData.accessToken, apiData.refreshToken || null);
+
+          if (Platform.OS !== 'web') {
+            await SecureStore.setItemAsync('authToken', apiData.accessToken);
+            if (apiData.refreshToken) {
+              await SecureStore.setItemAsync('refreshToken', apiData.refreshToken);
+            }
+            await SecureStore.setItemAsync('userData', JSON.stringify(mockUser));
+          }
           
           await SecureStore.setItemAsync('authToken', apiData.accessToken);
           if (apiData.refreshToken) {
@@ -142,6 +156,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setStoredTokens('mock_jwt_access_token', 'mock_jwt_refresh_token');
           await SecureStore.setItemAsync('authToken', 'mock_jwt_access_token');
           await SecureStore.setItemAsync('userData', JSON.stringify(mockUser));
+
+          if (Platform.OS !== 'web') {
+            await SecureStore.setItemAsync('authToken', 'mock_jwt_access_token');
+            await SecureStore.setItemAsync('userData', JSON.stringify(mockUser));
+          }
           
           setIsLoading(false);
           // Include warning to display in toast
@@ -340,6 +359,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const refresh = await SecureStore.getItemAsync('refreshToken');
       if (refresh) {
         await apiRequest.post(API_ENDPOINTS.AUTH.LOGOUT, { refreshToken: refresh });
+      }
+      if (Platform.OS !== 'web') {
+        await SecureStore.deleteItemAsync('authToken');
+        await SecureStore.deleteItemAsync('refreshToken');
+        await SecureStore.deleteItemAsync('userData');
       }
     } catch (err) {
       console.warn('Server-side logout skipped:', err);
