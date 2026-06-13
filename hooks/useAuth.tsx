@@ -3,7 +3,7 @@ import { User } from '../types';
 import { apiRequest, setStoredTokens } from '../services/api';
 import { API_ENDPOINTS, API_BASE_URL } from '../constants/API_Endpoints';
 import * as SecureStore from 'expo-secure-store';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { GoogleSignin } from '../services/GoogleSigninWrapper';
 import { Platform } from 'react-native';
 
 
