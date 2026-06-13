@@ -1,134 +1,95 @@
 import React from 'react';
-import { View, Text, StyleSheet, useColorScheme } from 'react-native';
-import { Star } from 'lucide-react-native';
-import { Colors } from '../../constants/Colors';
-import { Testimonial } from '../../types';
+import { View, Text, StyleSheet } from 'react-native';
+import { Testimonial } from '../../services/testimonialsService';
 
-const AVATAR_COLORS = [
-  '#2E9EBF', '#E05638', '#10B981', '#8B5CF6',
-  '#F59E0B', '#EC4899', '#0EA5E9', '#6366F1',
-];
+const StarRating = ({ rating, size = 14 }: { rating: number; size?: number }) => (
+  <View style={{ flexDirection: 'row', gap: 2 }}>
+    {[1, 2, 3, 4, 5].map(star => (
+      <Text key={star} style={{ fontSize: size, color: star <= rating ? '#FBBF24' : '#D1D5DB' }}>
+        ★
+      </Text>
+    ))}
+  </View>
+);
 
-interface TestimonialCardProps {
-  testimonial: Testimonial;
-}
-
-/**
- * Compact testimonial card with avatar, star rating, and quote.
- * Background color-coded by user initial for visual variety.
- */
-export const TestimonialCard: React.FC<TestimonialCardProps> = ({ testimonial }) => {
-  const systemTheme = useColorScheme() ?? 'light';
-  const themeColors = Colors[systemTheme];
-
-  // Deterministic color based on user initial
-  const avatarColor =
-    AVATAR_COLORS[testimonial.userInitial.charCodeAt(0) % AVATAR_COLORS.length];
-
+export default function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
   return (
-    <View
-      style={[
-        styles.card,
-        {
-          backgroundColor: systemTheme === 'light' ? '#FFFFFF' : themeColors.surface,
-          borderColor: themeColors.border,
-          shadowColor: systemTheme === 'light' ? '#0F172A' : '#000',
-        },
-      ]}
-    >
-      {/* Header — Avatar + Name + Rating */}
-      <View style={styles.header}>
-        <View style={[styles.avatar, { backgroundColor: avatarColor }]}>
+    <View style={styles.card}>
+      <View style={styles.cardTop}>
+        <View style={styles.avatar}>
           <Text style={styles.avatarText}>{testimonial.userInitial}</Text>
         </View>
-        <View style={styles.headerInfo}>
-          <Text
-            style={[styles.userName, { color: themeColors.text }]}
-            numberOfLines={1}
-          >
-            {testimonial.userName}
+        <View style={styles.userInfo}>
+          <Text style={styles.userName}>{testimonial.userName}</Text>
+          <Text style={styles.date}>
+            {new Date(testimonial.createdAt).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+            })}
           </Text>
-          <View style={styles.starRow}>
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Star
-                key={i}
-                size={12}
-                color={i < testimonial.rating ? '#F59E0B' : themeColors.border}
-                fill={i < testimonial.rating ? '#F59E0B' : 'transparent'}
-              />
-            ))}
-          </View>
         </View>
       </View>
-
-      {/* Quote */}
-      <Text
-        style={[styles.message, { color: themeColors.textSecondary }]}
-        numberOfLines={4}
-      >
-        &ldquo;{testimonial.message}&rdquo;
-      </Text>
-
-      {/* Timestamp */}
-      <Text style={[styles.timestamp, { color: themeColors.textMuted }]}>
-        {testimonial.createdAt}
+      <StarRating rating={testimonial.rating} />
+      <Text style={styles.message} numberOfLines={4}>
+        "{testimonial.message}"
       </Text>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   card: {
-    width: 260,
-    borderRadius: 18,
+    width: 240,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
+    marginRight: 12,
     borderWidth: 1,
-    padding: 18,
-    marginRight: 14,
-    // Premium shadow
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 3,
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
   },
-  header: {
+  cardTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: 10,
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#2E9EBF',
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: 10,
   },
   avatarText: {
-    color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '800',
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
-  headerInfo: {
-    marginLeft: 12,
+  userInfo: {
     flex: 1,
   },
   userName: {
     fontSize: 14,
     fontWeight: '700',
-    marginBottom: 3,
+    color: '#0F172A',
   },
-  starRow: {
-    flexDirection: 'row',
-    gap: 2,
+  date: {
+    fontSize: 11,
+    color: '#94A3B8',
+    marginTop: 2,
   },
   message: {
     fontSize: 13,
-    fontWeight: '500',
+    color: '#475569',
     lineHeight: 19,
+    marginTop: 8,
     fontStyle: 'italic',
-    marginBottom: 10,
-  },
-  timestamp: {
-    fontSize: 11,
-    fontWeight: '500',
   },
 });
