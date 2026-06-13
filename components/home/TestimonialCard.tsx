@@ -40,11 +40,9 @@ export default function TestimonialCard({ testimonial }: { testimonial: Testimon
 
 const styles = StyleSheet.create({
   card: {
-    width: 240,
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
     padding: 16,
-    marginRight: 12,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     shadowColor: '#000',
