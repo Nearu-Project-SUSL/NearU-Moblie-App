@@ -14,6 +14,7 @@ import {
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { getAllShops, getCategories, ShopResponse } from '../../services/foodshop';
 
 import { Colors } from '../../constants/Colors';
@@ -93,6 +94,13 @@ export default function FoodShopsScreen() {
         imageStyle={styles.headerImage}
       >
         <View style={styles.headerOverlay} />
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="arrow-back" size={22} color="#fff" />
+        </TouchableOpacity>
         <SectionHeader
           title="Food Shops"
           subtitle="Discover local food around you"
@@ -259,6 +267,19 @@ const styles = StyleSheet.create({
   headerSectionOverride: {
     marginBottom: 0,
     paddingHorizontal: 0,
+  },
+
+  backButton: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 56 : 40,
+    left: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    zIndex: 2,
   },
 
   searchRow: {
