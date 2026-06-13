@@ -395,7 +395,7 @@ export default function HomeScreen() {
           {loadingTestimonials ? (
             <ActivityIndicator size="small" color="#2E9EBF" style={{ marginVertical: 20 }} />
           ) : testimonials.length === 0 ? (
-            <Text style={{ color: '#94A3B8', paddingHorizontal: 16 }}>No reviews yet</Text>
+            <Text style={{ color: themeColors.textMuted, paddingHorizontal: 16 }}>No reviews yet</Text>
           ) : (
             <>
               <FlatList
@@ -428,7 +428,15 @@ export default function HomeScreen() {
               <View style={styles.dots}>
                 {testimonials.map((_, i) => (
                   <TouchableOpacity key={i} onPress={() => goToPage(i)}>
-                    <View style={[styles.dot, i === currentPage && styles.dotActive]} />
+                    <View 
+                    style={[styles.dot,
+                    {
+                      backgroundColor:
+                        i === currentPage
+                          ? themeColors.nearuAccent
+                          : themeColors.border,
+                    },
+                      i === currentPage && styles.dotActive]} />
                   </TouchableOpacity>
                 ))}
               </View>
@@ -436,8 +444,17 @@ export default function HomeScreen() {
           )}
 
           {/* Share button */}
-          <TouchableOpacity style={styles.shareBtn} onPress={handleSharePress}>
-            <Text style={styles.shareBtnText}>⭐  Share Your Experience</Text>
+          <TouchableOpacity 
+          style={[
+            styles.shareBtn,
+            {backgroundColor: themeColors.nearuAccent}, 
+          ]}
+          onPress={handleSharePress}>
+            
+            <Text style={styles.shareBtnText}>
+              ⭐  Share Your Experience
+              </Text>
+          
           </TouchableOpacity>
         </View>
 
@@ -452,39 +469,112 @@ export default function HomeScreen() {
             style={styles.modalOverlay}
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           >
-            <View style={styles.modalCard}>
+            <View 
+            style={[
+              styles.modalCard,
+              {backgroundColor: themeColors.surfaceCard}  
+            ]}>
+              
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Share Your Experience</Text>
+                
+                <Text 
+                style={[
+                  styles.modalTitle,
+                  {color: themeColors.text}
+                ]}>
+                  
+                  Share Your Experience
+                </Text>
+
                 <TouchableOpacity onPress={() => setModalVisible(false)}>
-                  <Text style={styles.modalClose}>✕</Text>
+                  <Text 
+                  style={[
+                    styles.modalClose,
+                    {color: themeColors.text}  
+                  ]}>
+                    ✕
+                  </Text>
                 </TouchableOpacity>
+              
               </View>
 
-              <Text style={styles.modalGreeting}>Hi {user?.firstName ?? 'Student'} 👋</Text>
+              <Text
+                style={[
+                  styles.modalGreeting,
+                  { color: themeColors.text },
+                ]}
+              >
+                Hi {user?.firstName ?? 'Student'} 👋
+              </Text>
 
-              <Text style={styles.modalLabel}>Your Rating</Text>
+              <Text
+                style={[
+                  styles.modalLabel,
+                  { color: themeColors.text },
+                ]}
+              >
+                Your Rating
+              </Text>              
+              
               <StarRating rating={rating} onRate={setRating} size={32} />
 
-              <Text style={[styles.modalLabel, { marginTop: 16 }]}>Your Message</Text>
+              <Text
+                style={[
+                  styles.modalLabel,
+                  {
+                    color: themeColors.text,
+                    marginTop: 16,
+                  },
+                ]}
+              >
+                Your Message
+              </Text>    
+              
               <TextInput
-                style={styles.modalInput}
+                style={[
+                  styles.modalInput,
+                  {
+                    backgroundColor: themeColors.surfaceElevated,
+                    borderColor: themeColors.border,
+                    color: themeColors.text,
+                  },
+                ]}
                 value={message}
                 onChangeText={setMessage}
                 placeholder="Tell us about your experience with NearU..."
-                placeholderTextColor="#aaa"
+                placeholderTextColor={themeColors.textMuted}
                 multiline
                 numberOfLines={4}
                 textAlignVertical="top"
                 maxLength={500}
               />
-              <Text style={styles.charCount}>{message.length}/500</Text>
+
+              <Text
+                style={[
+                  styles.charCount,
+                  { color: themeColors.textMuted },
+                ]}
+              >
+                {message.length}/500
+              </Text>
 
               <TouchableOpacity
-                style={[styles.submitBtn, submitting && styles.submitBtnDisabled]}
+                style={[
+                  styles.submitBtn,
+                  { backgroundColor: themeColors.nearuAccent },
+                  submitting && styles.submitBtnDisabled,
+                ]}
                 onPress={handleSubmit}
                 disabled={submitting}
               >
-                {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitBtnText}>Submit Review</Text>}
+                {submitting ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.submitBtnText}>
+                    Submit Review
+                  </Text>
+                )}
+
               </TouchableOpacity>
             </View>
           </KeyboardAvoidingView>
