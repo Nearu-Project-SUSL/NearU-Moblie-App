@@ -5,6 +5,7 @@ import {
   TextInput,
   FlatList,
   Image,
+  ImageBackground,
   TouchableOpacity,
   ActivityIndicator,
   StyleSheet,
@@ -85,10 +86,15 @@ export default function FoodShopsScreen() {
     <View style={[styles.container, { backgroundColor: themeColors.background }]}>
 
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: Colors.brand.accent }]}>
+      <ImageBackground
+        source={require('../../assets/food_service.png')}
+        style={styles.header}
+        imageStyle={styles.headerImage}
+      >
+        <View style={styles.headerOverlay} />
         <Text style={styles.headerTitle}>Food Shops</Text>
         <Text style={styles.headerSub}>Discover local food around you</Text>
-      </View>
+      </ImageBackground>
 
       {/* Search */}
       <View style={[styles.searchRow, { backgroundColor: themeColors.surface }]}>
@@ -228,9 +234,21 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
 
   header: {
+    height: 160,
     paddingTop: Platform.OS === 'ios' ? 56 : 40,
     paddingBottom: 20,
     paddingHorizontal: 20,
+    overflow: 'hidden',
+    justifyContent: 'flex-end',
+  },
+
+  headerImage: {
+    resizeMode: 'cover',
+  },
+
+  headerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.35)',
   },
 
   headerTitle: {
