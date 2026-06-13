@@ -15,7 +15,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { useAuth } from '../hooks/useAuth';
-import { getTestimonials, submitTestimonial, Testimonial } from '../services/Testimonials';
+import { getTestimonials, submitTestimonial, Testimonial } from '../services/testimonialsService';
 import { Colors } from '../constants/Colors';
 
 const C = Colors.light;

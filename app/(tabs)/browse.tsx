@@ -10,6 +10,7 @@ import {
   Dimensions,
   Platform,
   TextInput,
+  ActivityIndicator
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -35,9 +36,11 @@ import { NearULogo } from '../../components/NearULogo';
 import { SectionHeader } from '../../components/home/SectionHeader';
 import { ServiceGridCard } from '../../components/home/ServiceGridCard';
 import { DealCard } from '../../components/home/DealCard';
-import { TestimonialCard } from '../../components/home/TestimonialCard';
-import { HotDeal, Testimonial } from '../../types';
+import { HotDeal} from '../../types';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useState, useEffect } from 'react';
+import { getTestimonials, Testimonial } from '../../services/testimonialsService';
+import TestimonialCard from '../../components/home/TestimonialCard';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -119,32 +122,6 @@ const HOT_DEALS: HotDeal[] = [
   },
 ];
 
-const TESTIMONIALS: Testimonial[] = [
-  {
-    id: 'test_1',
-    userName: 'Kasun Perera',
-    userInitial: 'K',
-    message: 'NearU completely changed how I find food on campus. No more walking to the canteen in the rain — the riders bring it right to my faculty!',
-    rating: 5,
-    createdAt: '2 days ago',
-  },
-  {
-    id: 'test_2',
-    userName: 'Nimali Fernando',
-    userInitial: 'N',
-    message: 'Found my boarding room through NearU within a day. The verified reviews from fellow students really helped me feel confident about my choice.',
-    rating: 5,
-    createdAt: '1 week ago',
-  },
-  {
-    id: 'test_3',
-    userName: 'Malith Jayasuriya',
-    userInitial: 'M',
-    message: 'The ride-sharing feature is genius. We split the taxi cost three ways and it works out cheaper than the bus. Love this app!',
-    rating: 4,
-    createdAt: '3 days ago',
-  },
-];
 
 // ── Component ──────────────────────────────────────────────────────────────
 
@@ -157,6 +134,16 @@ export default function HomeScreen() {
 
   const firstName = user?.firstName || 'Student';
   const greeting = getGreeting();
+
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [loadingTestimonials, setLoadingTestimonials] = useState(true);
+
+  useEffect (() => {
+    getTestimonials()
+      .then(setTestimonials)
+      .catch(() => {})
+      .finally(() => setLoadingTestimonials(false))
+  }, []);
 
   return (
     <View style={[styles.root, { backgroundColor: themeColors.background }]}>
@@ -289,15 +276,22 @@ export default function HomeScreen() {
             subtitle="What your peers say about NearU"
             icon={<Sparkles size={20} color="#EC4899" />}
           />
-          <FlatList
-            data={TESTIMONIALS}
-            renderItem={({ item }) => <TestimonialCard testimonial={item} />}
-            keyExtractor={(item) => item.id}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.carouselContainer}
-          />
-        </View>
+          {loadingTestimonials ? (
+            <ActivityIndicator size="small" color="#2E9EBF" style={{ marginVertical: 20 }} />
+          ) : testimonials.length === 0 ? (
+            <Text style={{ color: '#94A3B8', paddingHorizontal: 16 }}>No reviews yet</Text>
+          ) : (
+            <FlatList
+              data={testimonials}
+              renderItem={({ item }) => <TestimonialCard testimonial={item} />}
+              keyExtractor={item => item.id.toString()}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.carouselContainer}
+            />
+          )}
+</View>
+      
 
         {/* ── Share CTA Footer ── */}
         <View style={[styles.section, styles.footerSection]}>
