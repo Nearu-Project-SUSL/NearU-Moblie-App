@@ -18,6 +18,7 @@ import { getAllShops, getCategories, ShopResponse } from '../../services/foodsho
 
 import { Colors } from '../../constants/Colors';
 import { useColorScheme } from 'react-native';
+import { SectionHeader } from '../../components/home/SectionHeader';
 
 export default function FoodShopsScreen() {
   const router = useRouter();
@@ -92,8 +93,12 @@ export default function FoodShopsScreen() {
         imageStyle={styles.headerImage}
       >
         <View style={styles.headerOverlay} />
-        <Text style={styles.headerTitle}>Food Shops</Text>
-        <Text style={styles.headerSub}>Discover local food around you</Text>
+        <SectionHeader
+          title="Food Shops"
+          subtitle="Discover local food around you"
+          light
+          containerStyle={styles.headerSectionOverride}
+        />
       </ImageBackground>
 
       {/* Search */}
@@ -251,16 +256,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.35)',
   },
 
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#fff',
-  },
-
-  headerSub: {
-    fontSize: 14,
-    marginTop: 2,
-    color: 'rgba(255,255,255,0.8)',
+  headerSectionOverride: {
+    marginBottom: 0,
+    paddingHorizontal: 0,
   },
 
   searchRow: {
