@@ -47,6 +47,8 @@ import { getTestimonials, Testimonial, submitTestimonial } from '../../services/
 import TestimonialCard from '../../components/home/TestimonialCard';
 
 
+
+
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 const SERVICES = [
@@ -349,8 +351,12 @@ export default function HomeScreen() {
                 label={service.label}
                 description={service.description}
                 onPress={() => {
+                   if (service.id === 'food') {
+                    router.push('/food')
+                  } else{
                   HapticService.triggerSelection();
                   router.push(`/service/${service.id}`);
+                  }
                 }}
               />
             ))}
