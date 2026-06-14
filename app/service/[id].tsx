@@ -73,11 +73,11 @@ const SERVICE_META: Record<string, { title: string; subtitle: string; themeColor
     themeColor: '#EC4899',
     bgImage: require('../../assets/gift_service.png'),
   },
-  deals: {
-    title: 'Deals Vault',
-    subtitle: 'Exclusive student saving vaults',
-    themeColor: '#F59E0B',
-    bgImage: require('../../assets/offer_service.png'),
+  photography: {
+    title: 'Photography Hub',
+    subtitle: 'Book local student photographers & event packages',
+    themeColor: '#EC4899',
+    bgImage: require('../../assets/photography_service.png'),
   },
   transport: {
     title: 'Transport Hub',
@@ -420,59 +420,42 @@ export default function ServiceDetailScreen() {
           </View>
         )}
 
-        {/* 6. DEALS SERVICE PAGE */}
-        {id === 'deals' && (
+        {/* 6. PHOTOGRAPHY SERVICE PAGE */}
+        {id === 'photography' && (
           <View style={styles.detailSection}>
-            <Text style={[styles.sectionTitle, { color: themeColors.text }]}>Active Savings Code</Text>
+            <Text style={[styles.sectionTitle, { color: themeColors.text }]}>Event Photographers</Text>
             
-            <View style={[styles.vendorCard, { backgroundColor: systemTheme === 'light' ? '#FFFFFF' : themeColors.surface, borderColor: themeColors.border }]}>
-              <View style={styles.vendorHeader}>
-                <Text style={[styles.vendorName, { color: themeColors.text }]}>Campus Canteen Voucher</Text>
-                <View style={[styles.gigTag, { backgroundColor: '#EF44441C' }]}>
-                  <Text style={{ color: '#EF4444', fontSize: 11, fontWeight: '700' }}>30% OFF</Text>
-                </View>
-              </View>
-              <Text style={[styles.vendorDesc, { color: themeColors.textSecondary, marginTop: 4 }]}>
-                Valid on all meals at primary campus canteens. Limited to 1 checkout per user.
-              </Text>
-
-              {/* Elegant code copier */}
-              <View style={[styles.codeBox, { backgroundColor: systemTheme === 'light' ? '#F1F5F9' : '#0F172A' }]}>
-                <Text style={[styles.codeText, { color: themeColors.text }]}>SAB30OFF</Text>
-                <Pressable onPress={copyToClipboard} style={styles.copyBtn}>
-                  {copiedCode ? <Check size={16} color="#10B981" /> : <Copy size={16} color={themeColors.textSecondary} />}
-                </Pressable>
-              </View>
-            </View>
-
-            {/* Scratch card interactive widget */}
-            <Text style={[styles.sectionTitle, { color: themeColors.text, marginTop: 16 }]}>Daily Scratch Card Deal</Text>
-            <Pressable 
-              onPress={() => {
-                if (!scratched) {
-                  HapticService.triggerSuccess();
-                  setScratched(true);
-                }
-              }}
-              style={[styles.scratchCardContainer, { borderColor: themeColors.border }]}
-            >
-              {!scratched ? (
-                <LinearGradient
-                  colors={[service.themeColor, '#EC4899']}
-                  style={StyleSheet.absoluteFillObject}
-                >
-                  <View style={styles.scratchCover}>
-                    <Text style={styles.scratchCoverText}>Tap to Scratch Card 🎁</Text>
+            {[
+              { name: 'Sabra Snaps', rate: 'Rs. 5,000/hr', rating: 4.9, bio: 'Specialist in portraits, outdoor shoots, and graduation coverage.', packages: ['Portrait', 'Event'] },
+              { name: 'Aura Photography', rate: 'Rs. 8,000/hr', rating: 4.8, bio: 'Premium graduation, couple, and mini-shoots with professional editing.', packages: ['Graduation', 'Couple'] },
+              { name: 'Lens Craft Studios', rate: 'Rs. 4,500/hr', rating: 4.7, bio: 'Student-friendly portfolio shoots and society event coverage.', packages: ['Portfolio', 'Casual'] },
+            ].map((studio, index) => (
+              <Pressable 
+                key={index}
+                onPress={() => HapticService.triggerTap()}
+                style={[styles.vendorCard, { backgroundColor: systemTheme === 'light' ? '#FFFFFF' : themeColors.surface, borderColor: themeColors.border }]}
+              >
+                <View style={styles.vendorHeader}>
+                  <Text style={[styles.vendorName, { color: themeColors.text }]}>{studio.name}</Text>
+                  <View style={styles.ratingRow}>
+                    <Star size={14} color="#FBBF24" fill="#FBBF24" />
+                    <Text style={[styles.ratingText, { color: themeColors.textSecondary }]}>{studio.rating}</Text>
                   </View>
-                </LinearGradient>
-              ) : (
-                <View style={[styles.scratchedResult, { backgroundColor: systemTheme === 'light' ? '#FFFBEB' : '#1E1B4B' }]}>
-                  <Text style={[styles.scratchedTitle, { color: service.themeColor }]}>Congratulations! 🎉</Text>
-                  <Text style={[styles.scratchedDesc, { color: themeColors.text }]}>You unlocked free delivery credit on your next Rides commute!</Text>
-                  <Text style={styles.scratchedCode}>FREECOMMUTE</Text>
                 </View>
-              )}
-            </Pressable>
+                <Text style={[styles.vendorDesc, { color: themeColors.textSecondary, marginTop: 4 }]}>{studio.bio}</Text>
+                
+                <View style={[styles.vendorStats, { justifyContent: 'space-between', marginTop: 10 }]}>
+                  <Text style={{ fontSize: 13, fontWeight: '800', color: service.themeColor }}>{studio.rate}</Text>
+                  <View style={{ flexDirection: 'row', gap: 6 }}>
+                    {studio.packages.map((pkg, pIdx) => (
+                      <View key={pIdx} style={[styles.gigTag, { backgroundColor: service.themeColor + '1C' }]}>
+                        <Text style={{ color: service.themeColor, fontSize: 10, fontWeight: '700' }}>{pkg}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              </Pressable>
+            ))}
           </View>
         )}
 
