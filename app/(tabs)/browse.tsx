@@ -75,10 +75,10 @@ const SERVICES = [
     image: require('../../assets/gift_service.png'),
   },
   {
-    id: 'deals',
-    label: 'Deals Vault',
-    description: 'Exclusive student savings',
-    image: require('../../assets/offer_service.png'),
+    id: 'photography',
+    label: 'Photography',
+    description: 'Event photography & packages',
+    image: require('../../assets/photography_service.png'),
   },
   {
     id: 'transport',
@@ -249,11 +249,13 @@ export default function HomeScreen() {
                 label={service.label}
                 description={service.description}
                 onPress={() => {
-                   if (service.id === 'food') {
-                    router.push('/food')
-                  } else{
-                  HapticService.triggerSelection();
-                  router.push(`/service/${service.id}`);
+                  if (service.id === 'food') {
+                    router.push('/food');
+                  } else if (service.id === 'gifts') {
+                    router.push('/gifts');
+                  } else {
+                    HapticService.triggerSelection();
+                    router.push(`/service/${service.id}`);
                   }
                 }}
               />
