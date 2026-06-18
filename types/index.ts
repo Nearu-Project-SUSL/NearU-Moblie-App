@@ -82,14 +82,6 @@ export interface HotDeal {
   imageUrl?: string;
 }
 
-export interface Testimonial {
-  id: string;
-  userName: string;
-  userInitial: string;
-  message: string;
-  rating: number;
-  createdAt: string;
-}
 
 export interface HomeService {
   id: string;

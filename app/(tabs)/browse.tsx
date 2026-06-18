@@ -10,6 +10,11 @@ import {
   Dimensions,
   Platform,
   TextInput,
+  ActivityIndicator,
+  TouchableOpacity,
+  Modal,
+  KeyboardAvoidingView,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -35,9 +40,12 @@ import { NearULogo } from '../../components/NearULogo';
 import { SectionHeader } from '../../components/home/SectionHeader';
 import { ServiceGridCard } from '../../components/home/ServiceGridCard';
 import { DealCard } from '../../components/home/DealCard';
-import { TestimonialCard } from '../../components/home/TestimonialCard';
-import { HotDeal, Testimonial } from '../../types';
+import { HotDeal} from '../../types';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { getTestimonials, Testimonial, submitTestimonial } from '../../services/testimonialsService';
+import TestimonialCard from '../../components/home/TestimonialCard';
+
 
 
 
@@ -121,32 +129,6 @@ const HOT_DEALS: HotDeal[] = [
   },
 ];
 
-const TESTIMONIALS: Testimonial[] = [
-  {
-    id: 'test_1',
-    userName: 'Kasun Perera',
-    userInitial: 'K',
-    message: 'NearU completely changed how I find food on campus. No more walking to the canteen in the rain — the riders bring it right to my faculty!',
-    rating: 5,
-    createdAt: '2 days ago',
-  },
-  {
-    id: 'test_2',
-    userName: 'Nimali Fernando',
-    userInitial: 'N',
-    message: 'Found my boarding room through NearU within a day. The verified reviews from fellow students really helped me feel confident about my choice.',
-    rating: 5,
-    createdAt: '1 week ago',
-  },
-  {
-    id: 'test_3',
-    userName: 'Malith Jayasuriya',
-    userInitial: 'M',
-    message: 'The ride-sharing feature is genius. We split the taxi cost three ways and it works out cheaper than the bus. Love this app!',
-    rating: 4,
-    createdAt: '3 days ago',
-  },
-];
 
 // ── Component ──────────────────────────────────────────────────────────────
 
@@ -155,10 +137,130 @@ export default function HomeScreen() {
   const systemTheme = useColorScheme() ?? 'light';
   const themeColors = Colors[systemTheme];
   const insets = useSafeAreaInsets();
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
+
 
   const firstName = user?.firstName || 'Student';
   const greeting = getGreeting();
+
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [loadingTestimonials, setLoadingTestimonials] = useState(true);
+  const { width: SCREEN_WIDTH } = Dimensions.get('window');
+  const CARD_WIDTH = SCREEN_WIDTH - 48;
+  const [currentPage, setCurrentPage] = useState(0);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [message, setMessage] = useState('');
+  const [rating, setRating] = useState(5);
+  const [submitting, setSubmitting] = useState(false);
+  const autoRotateRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const flatListRef = useRef<FlatList>(null);
+
+  useEffect (() => {
+    getTestimonials()
+      .then(setTestimonials)
+      .catch(() => {})
+      .finally(() => setLoadingTestimonials(false))
+  }, []);
+
+  const StarRating = ({
+    rating,
+    onRate,
+    size = 24,
+  }: {
+    rating: number;
+    onRate?: (r: number) => void;
+    size?: number;
+  }) => (
+    <View style={{ flexDirection: 'row', gap: 4 }}>
+      {[1, 2, 3, 4, 5].map(star => (
+        <TouchableOpacity
+          key={star}
+          onPress={() => onRate?.(star)}
+          disabled={!onRate}
+          activeOpacity={onRate ? 0.7 : 1}
+        >
+          <Text style={{ fontSize: size, color: star <= rating ? '#FBBF24' : '#D1D5DB' }}>★</Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+
+  const fetchTestimonials = useCallback(async () => {
+    try {
+      const data = await getTestimonials();
+      setTestimonials(data);
+    } catch{
+      //silently fail
+    } finally{
+      setLoadingTestimonials(false);
+    }
+  }, []);
+
+  useEffect (() => {
+    fetchTestimonials();
+  }, [fetchTestimonials]);
+
+  //Auto rotate every 5 sec
+  useEffect(() => {
+    if(testimonials.length <= 1) return;
+    autoRotateRef.current = setInterval(() => {
+     setCurrentPage(prev => {
+      const next = (prev + 1) % testimonials.length;
+      flatListRef.current?.scrollToIndex({ index: next , animated: true });
+      return next;
+     });    
+    }, 5000);
+    return () => {
+      if(autoRotateRef.current) {
+        clearInterval(autoRotateRef.current);
+      }
+    };
+  }, [testimonials.length])
+
+  const goToPage = (page: number) => {
+    if (autoRotateRef.current) clearInterval(autoRotateRef.current);
+    setCurrentPage(page);
+    flatListRef.current?.scrollToIndex({ index: page, animated: true });
+    autoRotateRef.current = setInterval(() => {
+      setCurrentPage(prev => {
+        const next = (prev + 1) % testimonials.length;
+        flatListRef.current?.scrollToIndex({ index: next, animated: true });
+        return next;
+      });
+    }, 5000);
+  };
+
+  const handleSharePress = () => {
+    console.log('share pressed, isAuthenticated:', isAuthenticated);
+    if (!isAuthenticated) {
+      Alert.alert('Login Required', 'Please log in to share your experience.');
+      return;
+    }
+    setModalVisible(true);
+  };
+
+  const handleSubmit = async () => {
+    if (!message.trim()) {
+      Alert.alert('Validation', 'Please write a message.');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await submitTestimonial({ message: message.trim(), rating });
+      setModalVisible(false);
+      setMessage('');
+      setRating(5);
+      Alert.alert('Thank you!', 'Your experience has been shared.');
+      fetchTestimonials();
+      setCurrentPage(0);
+    } catch {
+      Alert.alert('Error', 'Failed to submit. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  
 
   return (
     <View style={[styles.root, { backgroundColor: themeColors.background }]}>
@@ -299,77 +401,196 @@ export default function HomeScreen() {
             subtitle="What your peers say about NearU"
             icon={<Sparkles size={20} color="#EC4899" />}
           />
-          <FlatList
-            data={TESTIMONIALS}
-            renderItem={({ item }) => <TestimonialCard testimonial={item} />}
-            keyExtractor={(item) => item.id}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.carouselContainer}
-          />
+
+          {loadingTestimonials ? (
+            <ActivityIndicator size="small" color="#2E9EBF" style={{ marginVertical: 20 }} />
+          ) : testimonials.length === 0 ? (
+            <Text style={{ color: themeColors.textMuted, paddingHorizontal: 16 }}>No reviews yet</Text>
+          ) : (
+            <>
+              <FlatList
+                ref={flatListRef}
+                data={testimonials}
+                renderItem={({ item }) => (
+                  <View style={{ width: CARD_WIDTH, paddingHorizontal: 8 }}>
+                    <TestimonialCard testimonial={item} />
+                  </View>
+                )}
+                keyExtractor={item => item.id.toString()}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                snapToInterval={CARD_WIDTH}
+                decelerationRate="fast"
+                contentContainerStyle={styles.carouselContainer}
+                onMomentumScrollEnd={e => {
+                  const index = Math.round(e.nativeEvent.contentOffset.x / CARD_WIDTH);
+                  setCurrentPage(index);
+                }}
+                getItemLayout={(_, index) => ({
+                  length: CARD_WIDTH,
+                  offset: CARD_WIDTH * index,
+                  index,
+                })}
+              />
+
+              {/* Dot indicators */}
+              <View style={styles.dots}>
+                {testimonials.map((_, i) => (
+                  <TouchableOpacity key={i} onPress={() => goToPage(i)}>
+                    <View 
+                    style={[styles.dot,
+                    {
+                      backgroundColor:
+                        i === currentPage
+                          ? themeColors.nearuAccent
+                          : themeColors.border,
+                    },
+                      i === currentPage && styles.dotActive]} />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </>
+          )}
+
+          {/* Share button */}
+          <TouchableOpacity 
+          style={[
+            styles.shareBtn,
+            {backgroundColor: themeColors.nearuAccent}, 
+          ]}
+          onPress={handleSharePress}>
+            
+            <Text style={styles.shareBtnText}>
+              ⭐  Share Your Experience
+              </Text>
+          
+          </TouchableOpacity>
         </View>
 
-        {/* ── Share CTA Footer ── */}
-        <View style={[styles.section, styles.footerSection]}>
-          <View
-            style={[
-              styles.footerCard,
-              {
-                backgroundColor: systemTheme === 'light'
-                  ? Colors.brand.accent
-                  : 'rgba(46, 158, 191, 0.15)',
-                borderColor: systemTheme === 'light'
-                  ? 'transparent'
-                  : 'rgba(46, 158, 191, 0.2)',
-              },
-            ]}
+        {/* Submit Modal */}
+        <Modal
+          visible={modalVisible}
+          animationType="slide"
+          transparent
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <KeyboardAvoidingView
+            style={styles.modalOverlay}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           >
-            <View style={styles.footerTextGroup}>
+            <View 
+            style={[
+              styles.modalCard,
+              {backgroundColor: themeColors.surfaceCard}  
+            ]}>
+              
+              <View style={styles.modalHeader}>
+                
+                <Text 
+                style={[
+                  styles.modalTitle,
+                  {color: themeColors.text}
+                ]}>
+                  
+                  Share Your Experience
+                </Text>
+
+                <TouchableOpacity onPress={() => setModalVisible(false)}>
+                  <Text 
+                  style={[
+                    styles.modalClose,
+                    {color: themeColors.text}  
+                  ]}>
+                    ✕
+                  </Text>
+                </TouchableOpacity>
+              
+              </View>
+
               <Text
                 style={[
-                  styles.footerTitle,
+                  styles.modalGreeting,
+                  { color: themeColors.text },
+                ]}
+              >
+                Hi {user?.firstName ?? 'Student'} 👋
+              </Text>
+
+              <Text
+                style={[
+                  styles.modalLabel,
+                  { color: themeColors.text },
+                ]}
+              >
+                Your Rating
+              </Text>              
+              
+              <StarRating rating={rating} onRate={setRating} size={32} />
+
+              <Text
+                style={[
+                  styles.modalLabel,
                   {
-                    color: systemTheme === 'light' ? '#FFFFFF' : Colors.brand.accent,
+                    color: themeColors.text,
+                    marginTop: 16,
                   },
                 ]}
               >
-                Enjoying NearU? ✨
-              </Text>
-              <Text
+                Your Message
+              </Text>    
+              
+              <TextInput
                 style={[
-                  styles.footerSubtitle,
+                  styles.modalInput,
                   {
-                    color: systemTheme === 'light'
-                      ? 'rgba(255,255,255,0.85)'
-                      : themeColors.textSecondary,
+                    backgroundColor: themeColors.surfaceElevated,
+                    borderColor: themeColors.border,
+                    color: themeColors.text,
                   },
                 ]}
+                value={message}
+                onChangeText={setMessage}
+                placeholder="Tell us about your experience with NearU..."
+                placeholderTextColor={themeColors.textMuted}
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+                maxLength={500}
+              />
+
+              <Text
+                style={[
+                  styles.charCount,
+                  { color: themeColors.textMuted },
+                ]}
               >
-                Share your experience and help fellow students discover campus services.
+                {message.length}/500
               </Text>
+
+              <TouchableOpacity
+                style={[
+                  styles.submitBtn,
+                  { backgroundColor: themeColors.nearuAccent },
+                  submitting && styles.submitBtnDisabled,
+                ]}
+                onPress={handleSubmit}
+                disabled={submitting}
+              >
+                {submitting ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.submitBtnText}>
+                    Submit Review
+                  </Text>
+                )}
+
+              </TouchableOpacity>
             </View>
-            <Pressable
-              style={[
-                styles.footerButton,
-                {
-                  backgroundColor: systemTheme === 'light'
-                    ? 'rgba(255,255,255,0.2)'
-                    : Colors.brand.accent,
-                },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.footerButtonText,
-                  { color: '#FFFFFF' },
-                ]}
-              >
-                Share
-              </Text>
-              <ArrowRight size={14} color="#FFFFFF" />
-            </Pressable>
-          </View>
-        </View>
+          </KeyboardAvoidingView>
+        </Modal>
+
+        
 
         {/* Bottom safe area spacing adjusted for floating bottom navigation tab bar */}
         <View style={{ height: insets.bottom + 90 }} />
@@ -590,5 +811,108 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 13,
     fontWeight: '500',
+  },
+
+
+  //Testimonial
+  dots: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 12,
+  },
+  dot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: '#E2E8F0',
+  },
+  dotActive: {
+    backgroundColor: '#2E9EBF',
+    width: 20,
+  },
+  shareBtn: {
+    backgroundColor: '#2E9EBF',
+    borderRadius: 14,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 12,
+    marginHorizontal: 16,
+  },
+  shareBtnText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalCard: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    padding: 28,
+    paddingBottom: Platform.OS === 'ios' ? 40 : 28,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  modalClose: {
+    fontSize: 18,
+    color: '#94A3B8',
+    padding: 4,
+  },
+  modalGreeting: {
+    fontSize: 15,
+    color: '#475569',
+    marginBottom: 20,
+  },
+  modalLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#475569',
+    marginBottom: 8,
+  },
+  modalInput: {
+    backgroundColor: '#F1F5F9',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    padding: 14,
+    fontSize: 14,
+    color: '#0F172A',
+    minHeight: 100,
+    marginTop: 4,
+  },
+  charCount: {
+    fontSize: 11,
+    color: '#94A3B8',
+    textAlign: 'right',
+    marginTop: 4,
+    marginBottom: 16,
+  },
+  submitBtn: {
+    backgroundColor: '#2E9EBF',
+    borderRadius: 14,
+    paddingVertical: 15,
+    alignItems: 'center',
+  },
+  submitBtnDisabled: {
+    opacity: 0.6,
+  },
+  submitBtnText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
   },
 });
