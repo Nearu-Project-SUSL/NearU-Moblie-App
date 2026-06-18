@@ -14,28 +14,29 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Search, Plus, Sparkles, Gift, ArrowLeft, RefreshCw, Filter } from 'lucide-react-native';
+import { Search, Plus, Sparkles, Hotel, ArrowLeft, RefreshCw, Filter } from 'lucide-react-native';
 import { Colors } from '../../constants/Colors';
-import { getAllGiftShops, GiftShopResponseDto } from '../../services/giftshop';
+import { getAllAccommodations } from '../../services/accommodation';
+import { Accommodation } from '../../types/accommodation';
 import { useAuth } from '../../hooks/useAuth';
 import { HapticService } from '../../services/HapticService';
-import { CreateGiftShopModal } from '../../components/gifts/CreateGiftShopModal';
-import { GiftShopCard } from '../../components/gifts/GiftShopCard';
+import { CreateAccommodationModal } from '../../components/accommodations/CreateAccommodationModal';
+import { AccommodationCard } from '../../components/accommodations/AccommodationCard';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const THEME_ACCENT = '#EC4899'; // Pink/Rose theme for gifts
+const THEME_ACCENT = '#10B981'; // Emerald green accent for accommodations
 
-export default function GiftShopsScreen() {
+export default function AccommodationsScreen() {
   const router = useRouter();
   const theme = useColorScheme() ?? 'light';
   const themeColors = Colors[theme];
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
 
-  const [shops, setShops] = useState<GiftShopResponseDto[]>([]);
+  const [places, setPlaces] = useState<Accommodation[]>([]);
   const [search, setSearch] = useState('');
-  const [activeLocation, setActiveLocation] = useState('All');
+  const [activeType, setActiveType] = useState('All');
   
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -46,55 +47,55 @@ export default function GiftShopsScreen() {
 
   const canPost = user && (user.role === 'Admin' || user.role === 'Business');
 
-  const fetchShops = useCallback(async () => {
+  const fetchPlaces = useCallback(async () => {
     try {
       setError(null);
-      const data = await getAllGiftShops();
-      setShops(data);
+      const data = await getAllAccommodations();
+      setPlaces(data);
     } catch (err: any) {
-      setError('Could not load gift shops. Please try again.');
+      setError('Could not load accommodations. Please try again.');
     }
   }, []);
 
   useEffect(() => {
     setLoading(true);
-    fetchShops().finally(() => setLoading(false));
-  }, [fetchShops]);
+    fetchPlaces().finally(() => setLoading(false));
+  }, [fetchPlaces]);
 
   const onRefresh = async () => {
     HapticService.triggerTap();
     setRefreshing(true);
-    await fetchShops();
+    await fetchPlaces();
     setRefreshing(false);
   };
 
-  const handleShopPress = (id: string) => {
+  const handlePlacePress = (id: string) => {
     HapticService.triggerTap();
-    router.push(`/gifts/${id}`);
+    router.push(`/accommodations/${id}`);
   };
 
-  const handleAddShopPress = () => {
+  const handleAddPlacePress = () => {
     HapticService.triggerSelection();
     setCreateModalVisible(true);
   };
 
-  // Get locations dynamically
-  const locations = ['All', ...Array.from(new Set(shops.map(s => s.locationName).filter(Boolean)))];
+  // Types filter pills
+  const types = ['All', 'Boarding', 'Annex', 'Apartment'];
 
   // Filter list based on UI choices
-  const getFilteredShops = () => {
-    return shops.filter((shop) => {
+  const getFilteredPlaces = () => {
+    return places.filter((place) => {
       // 1. Search Query filter
       if (search.trim()) {
         const query = search.toLowerCase();
-        const matchesName = shop.name.toLowerCase().includes(query);
-        const matchesAddress = shop.address ? shop.address.toLowerCase().includes(query) : false;
-        const matchesLoc = shop.locationName.toLowerCase().includes(query);
-        if (!matchesName && !matchesAddress && !matchesLoc) return false;
+        const matchesTitle = place.title.toLowerCase().includes(query);
+        const matchesDesc = place.description ? place.description.toLowerCase().includes(query) : false;
+        const matchesLoc = place.location.toLowerCase().includes(query);
+        if (!matchesTitle && !matchesDesc && !matchesLoc) return false;
       }
 
-      // 2. Location filter
-      if (activeLocation !== 'All' && shop.locationName !== activeLocation) {
+      // 2. Type filter
+      if (activeType !== 'All' && place.type !== activeType) {
         return false;
       }
 
@@ -102,15 +103,15 @@ export default function GiftShopsScreen() {
     });
   };
 
-  const filteredShopsList = getFilteredShops();
-  const featuredShops = filteredShopsList.filter(shop => shop.isActive).slice(0, 3);
+  const filteredPlacesList = getFilteredPlaces();
+  const featuredPlaces = filteredPlacesList.filter(place => place.rating >= 4.5).slice(0, 3);
 
   return (
     <View style={[styles.container, { backgroundColor: themeColors.background }]}>
       
       {/* Full-bleed Header Banner */}
       <View style={styles.bannerContainer}>
-        <Image source={require('../../assets/gift_service.png')} style={styles.bannerImage} />
+        <Image source={require('../../assets/stays_service.png')} style={styles.bannerImage} />
         <LinearGradient
           colors={['rgba(0,0,0,0.7)', 'rgba(0,0,0,0.3)', themeColors.background]}
           locations={[0, 0.45, 1]}
@@ -132,8 +133,8 @@ export default function GiftShopsScreen() {
 
         {/* Title overlay block */}
         <View style={styles.titleOverlay}>
-          <Text style={styles.bannerTitle}>Gift Shops</Text>
-          <Text style={styles.bannerSubtitle}>Send custom surprises & flowers</Text>
+          <Text style={styles.bannerTitle}>Accommodations</Text>
+          <Text style={styles.bannerSubtitle}>Verified boarding houses & rooms near campus</Text>
         </View>
       </View>
 
@@ -142,7 +143,7 @@ export default function GiftShopsScreen() {
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={THEME_ACCENT} />
           <Text style={{ color: themeColors.textSecondary, marginTop: 12, fontWeight: '600' }}>
-            Loading gift shops...
+            Loading accommodations...
           </Text>
         </View>
       ) : error ? (
@@ -157,7 +158,7 @@ export default function GiftShopsScreen() {
         </View>
       ) : (
         <FlatList
-          data={filteredShopsList}
+          data={filteredPlacesList}
           keyExtractor={item => item.id}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 40 }]}
@@ -176,7 +177,7 @@ export default function GiftShopsScreen() {
                 <TextInput
                   value={search}
                   onChangeText={setSearch}
-                  placeholder="Search gift shops..."
+                  placeholder="Search accommodations, area, amenities..."
                   placeholderTextColor={themeColors.textMuted}
                   style={[styles.searchInput, { color: themeColors.text }]}
                 />
@@ -184,15 +185,15 @@ export default function GiftShopsScreen() {
 
 
 
-              {/* Explore Shops Header Row */}
+              {/* Explore Stays Header Row */}
               <View style={styles.headerRow}>
                 <View style={styles.headerTitleGroup}>
                   <View style={styles.titleWithIcon}>
                     <Sparkles size={18} color={THEME_ACCENT} />
-                    <Text style={[styles.title, { color: themeColors.text }]}>Explore Shops</Text>
+                    <Text style={[styles.title, { color: themeColors.text }]}>Explore Accommodations</Text>
                   </View>
                   <Text style={[styles.subtitle, { color: themeColors.textSecondary }]}>
-                    {filteredShopsList.length} shops available
+                    {filteredPlacesList.length} properties available
                   </Text>
                 </View>
                 <View style={styles.headerActions}>
@@ -205,66 +206,64 @@ export default function GiftShopsScreen() {
                   
                   {canPost && (
                     <Pressable
-                      onPress={handleAddShopPress}
+                      onPress={handleAddPlacePress}
                       style={[styles.postBtn, { backgroundColor: THEME_ACCENT }]}
                     >
                       <Plus size={14} color="#FFFFFF" />
-                      <Text style={styles.postBtnText}>Register Shop</Text>
+                      <Text style={styles.postBtnText}>Add Place</Text>
                     </Pressable>
                   )}
                 </View>
               </View>
 
-              {/* Dynamic Location Filter Pills */}
-              {locations.length > 1 && (
-                <View style={styles.filterSection}>
-                  <FlatList
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    data={locations}
-                    keyExtractor={item => item}
-                    contentContainerStyle={styles.filterScroll}
-                    ListHeaderComponent={
-                      <View style={[styles.filterIconCell, { borderColor: themeColors.border }]}>
-                        <Filter size={12} color={themeColors.textMuted} />
-                        <Text style={[styles.filterIconLabel, { color: themeColors.textMuted }]}>Location:</Text>
-                      </View>
-                    }
-                    renderItem={({ item: loc }) => {
-                      const active = activeLocation === loc;
-                      return (
-                        <Pressable
-                          onPress={() => {
-                            HapticService.triggerSelection();
-                            setActiveLocation(loc);
-                          }}
-                          style={[
-                            styles.filterPill,
-                            {
-                              backgroundColor: active ? THEME_ACCENT : themeColors.surface,
-                              borderColor: active ? THEME_ACCENT : themeColors.border,
-                            },
-                          ]}
-                        >
-                          <Text style={[styles.filterText, { color: active ? '#FFFFFF' : themeColors.textSecondary }]}>
-                            {loc}
-                          </Text>
-                        </Pressable>
-                      );
-                    }}
-                  />
-                </View>
-              )}
+              {/* Dynamic Type Filter Pills */}
+              <View style={styles.filterSection}>
+                <FlatList
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  data={types}
+                  keyExtractor={item => item}
+                  contentContainerStyle={styles.filterScroll}
+                  ListHeaderComponent={
+                    <View style={[styles.filterIconCell, { borderColor: themeColors.border }]}>
+                      <Filter size={12} color={themeColors.textMuted} />
+                      <Text style={[styles.filterIconLabel, { color: themeColors.textMuted }]}>Type:</Text>
+                    </View>
+                  }
+                  renderItem={({ item: t }) => {
+                    const active = activeType === t;
+                    return (
+                      <Pressable
+                        onPress={() => {
+                          HapticService.triggerSelection();
+                          setActiveType(t);
+                        }}
+                        style={[
+                          styles.filterPill,
+                          {
+                            backgroundColor: active ? THEME_ACCENT : themeColors.surface,
+                            borderColor: active ? THEME_ACCENT : themeColors.border,
+                          },
+                        ]}
+                      >
+                        <Text style={[styles.filterText, { color: active ? '#FFFFFF' : themeColors.textSecondary }]}>
+                          {t}
+                        </Text>
+                      </Pressable>
+                    );
+                  }}
+                />
+              </View>
 
               {/* Featured Section */}
-              {featuredShops.length > 0 && (
+              {featuredPlaces.length > 0 && (
                 <View style={styles.featuredSection}>
                   <View style={styles.sectionHeaderRow}>
                     <Sparkles size={14} color={THEME_ACCENT} />
-                    <Text style={[styles.sectionTitle, { color: themeColors.text }]}>Featured Surprises</Text>
+                    <Text style={[styles.sectionTitle, { color: themeColors.text }]}>Featured Stays</Text>
                   </View>
                   <FlatList
-                    data={featuredShops}
+                    data={featuredPlaces}
                     keyExtractor={item => 'feat-' + item.id}
                     horizontal
                     showsHorizontalScrollIndicator={false}
@@ -273,7 +272,7 @@ export default function GiftShopsScreen() {
                     decelerationRate="fast"
                     renderItem={({ item }) => (
                       <View style={{ width: SCREEN_WIDTH * 0.8, marginRight: 12 }}>
-                        <GiftShopCard shop={item} onPress={() => handleShopPress(item.id)} />
+                        <AccommodationCard item={item} onPress={() => handlePlacePress(item.id)} />
                       </View>
                     )}
                   />
@@ -283,35 +282,35 @@ export default function GiftShopsScreen() {
               {/* List Heading */}
               <View style={[styles.sectionHeaderRow, { marginTop: 12, marginBottom: 8 }]}>
                 <Text style={[styles.sectionTitle, { color: themeColors.text }]}>
-                  All Gift Shops
+                  All Accommodations
                 </Text>
               </View>
             </View>
           }
           ListEmptyComponent={
             <View style={[styles.emptyContainer, { backgroundColor: themeColors.surface, borderColor: themeColors.border }]}>
-              <Gift size={28} color={themeColors.textMuted} />
+              <Hotel size={28} color={themeColors.textMuted} />
               <Text style={[styles.emptyText, { color: themeColors.textSecondary }]}>
-                No gift shops match your criteria.
+                No properties match your criteria.
               </Text>
               <Text style={{ color: themeColors.textMuted, fontSize: 11, textAlign: 'center', marginTop: 4, paddingHorizontal: 20 }}>
-                {search || activeLocation !== 'All'
-                  ? 'Try clearing your search query or location filter.'
-                  : 'Register a new gift shop profile to begin cataloging items!'}
+                {search || activeType !== 'All'
+                  ? 'Try clearing your search query or type filters.'
+                  : 'Register a new accommodation profile to list your student boarding place!'}
               </Text>
             </View>
           }
           renderItem={({ item }) => (
-            <GiftShopCard shop={item} onPress={() => handleShopPress(item.id)} />
+            <AccommodationCard item={item} onPress={() => handlePlacePress(item.id)} />
           )}
         />
       )}
 
       {/* Create Modal */}
-      <CreateGiftShopModal
+      <CreateAccommodationModal
         visible={createModalVisible}
         onClose={() => setCreateModalVisible(false)}
-        onSuccess={fetchShops}
+        onSuccess={fetchPlaces}
       />
     </View>
   );

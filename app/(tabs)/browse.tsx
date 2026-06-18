@@ -253,6 +253,8 @@ export default function HomeScreen() {
                     router.push('/food');
                   } else if (service.id === 'gifts') {
                     router.push('/gifts');
+                  } else if (service.id === 'accommodation') {
+                    router.push('/accommodations');
                   } else {
                     HapticService.triggerSelection();
                     router.push(`/service/${service.id}`);
