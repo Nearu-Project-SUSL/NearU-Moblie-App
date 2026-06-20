@@ -4,23 +4,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Phone, MapPin } from 'lucide-react-native';
 import { Colors } from '../../constants/Colors';
-import axios from 'axios';
-
-interface TukTukDriver {
-  id: number;
-  name: string;
-  phoneNumber: string;
-  plateNumber: string;
-  operatingArea?: string;
-  notes?: string;
-}
+import { getTukTukDrivers, TukTukDriverResponse } from '../../services/transport';
 
 export default function TukTukListScreen() {
   const router = useRouter();
   const scheme = useColorScheme();
   const theme = Colors[scheme === 'dark' ? 'dark' : 'light'];
 
-  const [drivers, setDrivers] = useState<TukTukDriver[]>([]);
+  const [drivers, setDrivers] = useState<TukTukDriverResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,9 +19,9 @@ export default function TukTukListScreen() {
     const fetchDrivers = async () => {
       try {
         setLoading(true);
-        const res = await axios.get('/api/tuktukdrivers');
-        setDrivers(res.data);
         setError(null);
+        const data = await getTukTukDrivers();
+        setDrivers(data);
       } catch (err) {
         console.error('Failed to load tuk tuk drivers:', err);
         setError('Could not load drivers. Please try again.');
@@ -75,7 +66,7 @@ export default function TukTukListScreen() {
       {!loading && !error && drivers.length > 0 && (
         <FlatList
           data={drivers}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item, index) => (item.id ?? index).toString()}
           contentContainerStyle={styles.listContent}
           renderItem={({ item }) => (
             <View

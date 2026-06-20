@@ -4,25 +4,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Clock } from 'lucide-react-native';
 import { Colors } from '../../constants/Colors';
-import axios from 'axios';
-
-interface TrainRoute {
-  id: number;
-  routeName: string;
-  startStation: string;
-  endStation: string;
-  departureTime: string;
-  arrivalTime?: string;
-  trainName?: string;
-  notes?: string;
-}
+import { getTrainRoutes, TrainRouteResponse } from '../../services/transport';
 
 export default function TrainListScreen() {
   const router = useRouter();
   const scheme = useColorScheme();
   const theme = Colors[scheme === 'dark' ? 'dark' : 'light'];
 
-  const [routes, setRoutes] = useState<TrainRoute[]>([]);
+  const [routes, setRoutes] = useState<TrainRouteResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,9 +19,9 @@ export default function TrainListScreen() {
     const fetchRoutes = async () => {
       try {
         setLoading(true);
-        const res = await axios.get('/api/trainroutes');
-        setRoutes(res.data);
         setError(null);
+        const data = await getTrainRoutes();
+        setRoutes(data);
       } catch (err) {
         console.error('Failed to load train routes:', err);
         setError('Could not load train routes. Please try again.');
@@ -77,7 +66,7 @@ export default function TrainListScreen() {
       {!loading && !error && routes.length > 0 && (
         <FlatList
           data={routes}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item, index) => (item.id ?? index).toString()}
           contentContainerStyle={styles.listContent}
           renderItem={({ item }) => (
             <View

@@ -4,25 +4,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Clock } from 'lucide-react-native';
 import { Colors } from '../../constants/Colors';
-import axios from 'axios';
-
-interface BusRoute {
-  id: number;
-  routeName: string;
-  startPoint: string;
-  endPoint: string;
-  departureTime: string;
-  arrivalTime?: string;
-  busNumber?: string;
-  notes?: string;
-}
+import { getBusRoutes, BusRouteResponse } from '../../services/transport';
 
 export default function BusListScreen() {
   const router = useRouter();
   const scheme = useColorScheme();
   const theme = Colors[scheme === 'dark' ? 'dark' : 'light'];
 
-  const [routes, setRoutes] = useState<BusRoute[]>([]);
+  const [routes, setRoutes] = useState<BusRouteResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,9 +19,9 @@ export default function BusListScreen() {
     const fetchRoutes = async () => {
       try {
         setLoading(true);
-        const res = await axios.get('/api/busroutes');
-        setRoutes(res.data);
         setError(null);
+        const data = await getBusRoutes();
+        setRoutes(data);
       } catch (err) {
         console.error('Failed to load bus routes:', err);
         setError('Could not load bus routes. Please try again.');
@@ -77,7 +66,7 @@ export default function BusListScreen() {
       {!loading && !error && routes.length > 0 && (
         <FlatList
           data={routes}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item, index) => (item.id ?? index).toString()}
           contentContainerStyle={styles.listContent}
           renderItem={({ item }) => (
             <View
