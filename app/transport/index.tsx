@@ -1,0 +1,152 @@
+import { useState } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  Image,
+  StyleSheet,
+  useColorScheme,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import { Bus, Train, ArrowRight } from 'lucide-react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Colors } from '../../constants/Colors'; // adjust path if different
+
+type TransportOption = {
+  id: string;
+  title: string;
+  description: string;
+  image: string;
+  buttonText: string;
+  ButtonIcon: typeof Bus;
+  route: '/transport/tuk' | '/transport/bus' | '/transport/train';
+  gradientColors: [string, string];
+};
+
+export default function TransportSelectionScreen() {
+  const router = useRouter();
+  const scheme = useColorScheme();
+  const theme = Colors[scheme === 'dark' ? 'dark' : 'light'];
+  const [pressedCard, setPressedCard] = useState<string | null>(null);
+
+  const transportOptions: TransportOption[] = [
+    {
+      id: 'tuk',
+      title: 'Tuk Rides',
+      description: 'Instant ride-hailing for short distances. Perfect for quick trips between faculties or local hangouts.',
+      image: 'https://images.unsplash.com/photo-1607607495455-cae135756707?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
+      buttonText: 'View Tuk Riders',
+      ButtonIcon: ArrowRight,
+      route: '/transport/tuk',
+      gradientColors: ['rgba(224,86,56,0.18)', 'rgba(46,158,191,0.10)'],
+    },
+    {
+      id: 'bus',
+      title: 'Bus Routine',
+      description: 'Accurate times on public bus services. Track arrival times and plan ahead.',
+      image: 'https://images.unsplash.com/photo-1642443055969-282b3416a333?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
+      buttonText: 'View Routine',
+      ButtonIcon: Bus,
+      route: '/transport/bus',
+      gradientColors: ['rgba(37,99,235,0.18)', 'rgba(46,158,191,0.10)'],
+    },
+    {
+      id: 'train',
+      title: 'Train Routine',
+      description: 'Inter-city connections and railway timings. Find the best train to get you home for the weekend.',
+      image: 'https://images.unsplash.com/photo-1640687735167-b71c4734e05c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
+      buttonText: 'Check Times',
+      ButtonIcon: Train,
+      route: '/transport/train',
+      gradientColors: ['rgba(16,185,129,0.18)', 'rgba(46,158,191,0.10)'],
+    },
+  ];
+
+  return (
+    <View style={[styles.flex, { backgroundColor: theme.background }]}>
+      <SafeAreaView style={styles.flex} edges={['top']}>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <View style={styles.hero}>
+            <Text style={[styles.heroTitle, { color: theme.text }]}>
+              Where do you want to{'\n'}
+              <Text style={{ color: theme.nearuAccent }}>go today?</Text>
+            </Text>
+            <Text style={[styles.heroSubtitle, { color: theme.textSecondary }]}>
+              Reliable and safe travel options for students around campus and beyond.
+            </Text>
+          </View>
+
+          <View style={styles.cardsContainer}>
+            {transportOptions.map((option) => {
+              const ButtonIcon = option.ButtonIcon;
+              const isPressed = pressedCard === option.id;
+
+              return (
+                <Pressable
+                  key={option.id}
+                  onPress={() => router.push(option.route)}
+                  onPressIn={() => setPressedCard(option.id)}
+                  onPressOut={() => setPressedCard(null)}
+                  style={[
+                    styles.card,
+                    {
+                      backgroundColor: theme.surfaceCard,
+                      borderColor: isPressed ? theme.nearuAccent : theme.border,
+                    },
+                  ]}
+                >
+                  <View style={styles.cardImageWrap}>
+                    <Image source={{ uri: option.image }} style={styles.cardImage} resizeMode="cover" />
+                    <LinearGradient
+                      colors={['transparent', 'rgba(0,0,0,0.55)', 'rgba(0,0,0,0.85)']}
+                      style={StyleSheet.absoluteFillObject}
+                    />
+                    <LinearGradient colors={option.gradientColors} style={StyleSheet.absoluteFillObject} />
+                  </View>
+
+                  <View style={styles.cardContent}>
+                    <Text style={[styles.cardTitle, { color: theme.text }]}>{option.title}</Text>
+                    <Text style={[styles.cardDescription, { color: theme.textSecondary }]}>
+                      {option.description}
+                    </Text>
+
+                    <View style={[styles.cardButton, { backgroundColor: theme.nearuAccent }]}>
+                      <Text style={styles.cardButtonText}>{option.buttonText}</Text>
+                      <ButtonIcon size={20} color="#FFFFFF" />
+                    </View>
+                  </View>
+                </Pressable>
+              );
+            })}
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  flex: { flex: 1 },
+  scrollContent: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 48 },
+  hero: { marginBottom: 28, marginTop: 8 },
+  heroTitle: { fontSize: 30, fontWeight: '700', lineHeight: 38, marginBottom: 12 },
+  heroSubtitle: { fontSize: 15, lineHeight: 22 },
+  cardsContainer: { gap: 20 },
+  card: { borderRadius: 24, borderWidth: 1.5, overflow: 'hidden' },
+  cardImageWrap: { height: 180, width: '100%' },
+  cardImage: { width: '100%', height: '100%' },
+  cardContent: { padding: 20 },
+  cardTitle: { fontSize: 22, fontWeight: '700', marginBottom: 8 },
+  cardDescription: { fontSize: 14, lineHeight: 20, marginBottom: 18 },
+  cardButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    paddingVertical: 14,
+    borderRadius: 14,
+  },
+  cardButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
+});
