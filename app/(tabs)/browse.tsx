@@ -82,10 +82,10 @@ const SERVICES = [
     image: require('../../assets/gift_service.png'),
   },
   {
-    id: 'deals',
-    label: 'Deals Vault',
-    description: 'Exclusive student savings',
-    image: require('../../assets/offer_service.png'),
+    id: 'photography',
+    label: 'Photography',
+    description: 'Event photography & packages',
+    image: require('../../assets/photography_service.png'),
   },
   {
     id: 'transport',
@@ -356,8 +356,10 @@ export default function HomeScreen() {
                     router.push('/gifts');
                   } else if (service.id === 'accommodation') {
                     router.push('/accommodations');
-                  } else if(service.id === 'transport') {
+                  } else if (service.id === 'transport') {
                     router.push('/transport');
+                  } else if (service.id === 'photography') {
+                    router.push('/photography');
                   } else {
                     HapticService.triggerSelection();
                     router.push(`/service/${service.id}`);

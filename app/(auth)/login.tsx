@@ -21,7 +21,7 @@ import { HapticService } from '../../services/HapticService';
 import { GoogleIcon } from '../../components/GoogleIcon';
 import { NearULogo } from '../../components/NearULogo';
 import { KeyRound, Mail, Eye, EyeOff, Sparkles, AlertCircle, UserPlus } from 'lucide-react-native';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { GoogleSignin } from '../../services/GoogleSigninWrapper';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 
 export default function LoginScreen() {
