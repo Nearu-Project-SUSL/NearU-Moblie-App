@@ -48,7 +48,6 @@ import TestimonialCard from '../../components/home/TestimonialCard';
 
 
 
-
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 const SERVICES = [
@@ -130,7 +129,7 @@ const HOT_DEALS: HotDeal[] = [
 ];
 
 
-// ── Component ──────────────────────────────────────────────────────────────
+// Component 
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -351,11 +350,17 @@ export default function HomeScreen() {
                 label={service.label}
                 description={service.description}
                 onPress={() => {
-                   if (service.id === 'food') {
-                    router.push('/food')
-                  } else{
-                  HapticService.triggerSelection();
-                  router.push(`/service/${service.id}`);
+                  if (service.id === 'food') {
+                    router.push('/food');
+                  } else if (service.id === 'gifts') {
+                    router.push('/gifts');
+                  } else if (service.id === 'accommodation') {
+                    router.push('/accommodations');
+                  } else if(service.id === 'transport') {
+                    router.push('/transport');
+                  } else {
+                    HapticService.triggerSelection();
+                    router.push(`/service/${service.id}`);
                   }
                 }}
               />
