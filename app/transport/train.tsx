@@ -146,9 +146,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginTop: 4,
     },
-    timeText: { fontSize: 14, fontWeight: '500' },
-    notes: { fontSize: 13, fontStyle: 'italic', marginTop: 8 },
-    bannerContainer: {
+  timeText: { fontSize: 14, fontWeight: '500' },
+  notes: { fontSize: 13, fontStyle: 'italic', marginTop: 8 },
+  bannerContainer: {
     height: 200,
     width: '100%',
     position: 'relative',

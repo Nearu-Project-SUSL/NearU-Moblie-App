@@ -5,11 +5,15 @@ import { useRouter } from 'expo-router';
 import { ArrowLeft, Clock } from 'lucide-react-native';
 import { Colors } from '../../constants/Colors';
 import { getBusRoutes, BusRouteResponse } from '../../services/transport';
+import { Image } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function BusListScreen() {
   const router = useRouter();
   const scheme = useColorScheme();
   const theme = Colors[scheme === 'dark' ? 'dark' : 'light'];
+  const insets = useSafeAreaInsets();
 
   const [routes, setRoutes] = useState<BusRouteResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,16 +37,31 @@ export default function BusListScreen() {
   }, []);
 
   return (
-    <SafeAreaView style={[styles.flex, { backgroundColor: theme.background }]} edges={['top']}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backBtn}>
-          <ArrowLeft size={22} color={theme.nearuAccent} />
-          <Text style={[styles.backText, { color: theme.nearuAccent }]}>Transport</Text>
-        </Pressable>
-        <Text style={[styles.title, { color: theme.text }]}>Bus Routine</Text>
-        <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-          Scheduled bus services
-        </Text>
+    <View style={[styles.flex, { backgroundColor: theme.background }]}>
+      <View style={styles.bannerContainer}>
+        <Image
+          source={{ uri: 'https://images.unsplash.com/photo-1607607495455-cae135756707?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080' }}
+          style={styles.bannerImage}
+        />
+        <LinearGradient
+          colors={['rgba(0,0,0,0.55)', 'rgba(0,0,0,0.25)', theme.background]}
+          locations={[0, 0.5, 1]}
+          style={StyleSheet.absoluteFillObject}
+        />
+        <View style={[styles.backButtonContainer, { paddingTop: insets.top + 8 }]}>
+          <Pressable
+            onPress={() => router.back()}
+            style={[styles.backButton, {
+              backgroundColor: scheme === 'light' ? 'rgba(255,255,255,0.9)' : 'rgba(30,41,59,0.9)',
+            }]}
+          >
+            <ArrowLeft size={20} color={theme.text} />
+          </Pressable>
+        </View>
+        <View style={styles.titleOverlay}>
+          <Text style={styles.bannerTitle}>Tuk Tuk Riders</Text>
+          <Text style={styles.bannerSubtitle}>Available drivers around campus</Text>
+        </View>
       </View>
 
       {loading && (
@@ -100,7 +119,7 @@ export default function BusListScreen() {
           )}
         />
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -129,4 +148,51 @@ const styles = StyleSheet.create({
   },
   timeText: { fontSize: 14, fontWeight: '500' },
   notes: { fontSize: 13, fontStyle: 'italic', marginTop: 8 },
+  bannerContainer: {
+    height: 200,
+    width: '100%',
+    position: 'relative',
+    justifyContent: 'flex-end',
+  },
+  bannerImage: {
+    ...StyleSheet.absoluteFillObject,
+    resizeMode: 'cover',
+    width: '100%',
+    height: '100%',
+  },
+  backButtonContainer: {
+    position: 'absolute',
+    left: 20,
+    top: 0,
+    zIndex: 10,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  titleOverlay: {
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    zIndex: 2,
+  },
+  bannerTitle: {
+    color: '#FFFFFF',
+    fontSize: 28,
+    fontWeight: '900',
+    letterSpacing: -0.5,
+  },
+  bannerSubtitle: {
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 13,
+    fontWeight: '500',
+    marginTop: 2,
+  },
 });
