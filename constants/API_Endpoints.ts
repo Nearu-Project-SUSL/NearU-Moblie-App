@@ -2,7 +2,7 @@
  * NearU .NET Backend Core Routing Configurations
  */
 
-export const API_BASE_URL = 'https://api.nearusab.me/api';
+export const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'https://api.nearusab.me/api';
 
 export const API_ENDPOINTS = {
   // Authentication Gateway

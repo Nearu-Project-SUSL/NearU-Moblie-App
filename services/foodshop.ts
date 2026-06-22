@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { apiClient } from './api';
+import { API_BASE_URL } from '../constants/API_Endpoints';
 
-const API_BASE = 'https://api.nearusab.me/api';
+const API_BASE = API_BASE_URL;
 
 export interface ShopResponse {
   id: string;
