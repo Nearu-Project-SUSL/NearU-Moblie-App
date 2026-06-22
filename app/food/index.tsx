@@ -5,6 +5,7 @@ import {
   TextInput,
   FlatList,
   Image,
+  ImageBackground,
   TouchableOpacity,
   ActivityIndicator,
   StyleSheet,
@@ -13,10 +14,12 @@ import {
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { getAllShops, getCategories, ShopResponse } from '../../services/foodshop';
 
 import { Colors } from '../../constants/Colors';
 import { useColorScheme } from 'react-native';
+import { SectionHeader } from '../../components/home/SectionHeader';
 
 export default function FoodShopsScreen() {
   const router = useRouter();
@@ -85,10 +88,26 @@ export default function FoodShopsScreen() {
     <View style={[styles.container, { backgroundColor: themeColors.background }]}>
 
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: Colors.brand.accent }]}>
-        <Text style={styles.headerTitle}>Food Shops</Text>
-        <Text style={styles.headerSub}>Discover local food around you</Text>
-      </View>
+      <ImageBackground
+        source={require('../../assets/food_service.png')}
+        style={styles.header}
+        imageStyle={styles.headerImage}
+      >
+        <View style={styles.headerOverlay} />
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="arrow-back" size={22} color="#fff" />
+        </TouchableOpacity>
+        <SectionHeader
+          title="Food Shops"
+          subtitle="Discover local food around you"
+          light
+          containerStyle={styles.headerSectionOverride}
+        />
+      </ImageBackground>
 
       {/* Search */}
       <View style={[styles.searchRow, { backgroundColor: themeColors.surface }]}>
@@ -228,21 +247,39 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
 
   header: {
+    height: 160,
     paddingTop: Platform.OS === 'ios' ? 56 : 40,
     paddingBottom: 20,
     paddingHorizontal: 20,
+    overflow: 'hidden',
+    justifyContent: 'flex-end',
   },
 
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#fff',
+  headerImage: {
+    resizeMode: 'cover',
   },
 
-  headerSub: {
-    fontSize: 14,
-    marginTop: 2,
-    color: 'rgba(255,255,255,0.8)',
+  headerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+  },
+
+  headerSectionOverride: {
+    marginBottom: 0,
+    paddingHorizontal: 0,
+  },
+
+  backButton: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 56 : 40,
+    left: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    zIndex: 2,
   },
 
   searchRow: {
