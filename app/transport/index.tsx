@@ -10,9 +10,10 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { Bus, Train, ArrowRight } from 'lucide-react-native';
+import { Bus, Train, ArrowRight, ArrowLeft } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors } from '../../constants/Colors'; // adjust path if different
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Colors } from '../../constants/Colors';
 
 type TransportOption = {
   id: string;
@@ -29,7 +30,10 @@ export default function TransportSelectionScreen() {
   const router = useRouter();
   const scheme = useColorScheme();
   const theme = Colors[scheme === 'dark' ? 'dark' : 'light'];
+  const insets = useSafeAreaInsets();
   const [pressedCard, setPressedCard] = useState<string | null>(null);
+
+  
 
   const transportOptions: TransportOption[] = [
     {
@@ -66,74 +70,155 @@ export default function TransportSelectionScreen() {
 
   return (
     <View style={[styles.flex, { backgroundColor: theme.background }]}>
-      <SafeAreaView style={styles.flex} edges={['top']}>
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <View style={styles.hero}>
-            <Text style={[styles.heroTitle, { color: theme.text }]}>
-              Where do you want to{'\n'}
-              <Text style={{ color: theme.nearuAccent }}>go today?</Text>
-            </Text>
-            <Text style={[styles.heroSubtitle, { color: theme.textSecondary }]}>
-              Reliable and safe travel options for students around campus and beyond.
-            </Text>
-          </View>
 
-          <View style={styles.cardsContainer}>
-            {transportOptions.map((option) => {
-              const ButtonIcon = option.ButtonIcon;
-              const isPressed = pressedCard === option.id;
+      {/* ── Full-bleed Banner Header ── */}
+      <View style={styles.bannerContainer}>
+        <Image
+          source={require('../../assets/transport_service.png')}
+          style={styles.bannerImage}
+        />
+        {/* Dark fade for readability */}
+        <LinearGradient
+          colors={['rgba(0,0,0,0.55)', 'rgba(0,0,0,0.25)', theme.background]}
+          locations={[0, 0.5, 1]}
+          style={StyleSheet.absoluteFillObject}
+        />
 
-              return (
-                <Pressable
-                  key={option.id}
-                  onPress={() => router.push(option.route)}
-                  onPressIn={() => setPressedCard(option.id)}
-                  onPressOut={() => setPressedCard(null)}
-                  style={[
-                    styles.card,
-                    {
-                      backgroundColor: theme.surfaceCard,
-                      borderColor: isPressed ? theme.nearuAccent : theme.border,
-                    },
-                  ]}
-                >
-                  <View style={styles.cardImageWrap}>
-                    <Image source={{ uri: option.image }} style={styles.cardImage} resizeMode="cover" />
-                    <LinearGradient
-                      colors={['transparent', 'rgba(0,0,0,0.55)', 'rgba(0,0,0,0.85)']}
-                      style={StyleSheet.absoluteFillObject}
-                    />
-                    <LinearGradient colors={option.gradientColors} style={StyleSheet.absoluteFillObject} />
+        {/* Floating back button */}
+        <View style={[styles.backButtonContainer, { paddingTop: insets.top + 8 }]}>
+          <Pressable
+            onPress={() => router.back()}
+            style={[
+              styles.backButton,
+              {
+                backgroundColor:
+                  scheme === 'light' ? 'rgba(255,255,255,0.9)' : 'rgba(30,41,59,0.9)',
+              },
+            ]}
+          >
+            <ArrowLeft size={20} color={theme.text} />
+          </Pressable>
+        </View>
+
+        {/* Title block at banner bottom */}
+        <View style={styles.titleOverlay}>
+          <Text style={styles.bannerTitle}>Transport</Text>
+          <Text style={styles.bannerSubtitle}>
+            Tuk rides, bus & train schedules — all in one place
+          </Text>
+        </View>
+      </View>
+
+      {/* ── Scrollable card content ── */}
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.cardsContainer}>
+          {transportOptions.map((option) => {
+            const ButtonIcon = option.ButtonIcon;
+            const isPressed = pressedCard === option.id;
+
+            return (
+              <Pressable
+                key={option.id}
+                onPress={() => router.push(option.route)}
+                onPressIn={() => setPressedCard(option.id)}
+                onPressOut={() => setPressedCard(null)}
+                style={[
+                  styles.card,
+                  {
+                    backgroundColor: theme.surfaceCard,
+                    borderColor: isPressed ? theme.nearuAccent : theme.border,
+                  },
+                ]}
+              >
+                <View style={styles.cardImageWrap}>
+                  <Image source={{ uri: option.image }} style={styles.cardImage} resizeMode="cover" />
+                  <LinearGradient
+                    colors={['transparent', 'rgba(0,0,0,0.55)', 'rgba(0,0,0,0.85)']}
+                    style={StyleSheet.absoluteFillObject}
+                  />
+                  <LinearGradient colors={option.gradientColors} style={StyleSheet.absoluteFillObject} />
+                </View>
+
+                <View style={styles.cardContent}>
+                  <Text style={[styles.cardTitle, { color: theme.text }]}>{option.title}</Text>
+                  <Text style={[styles.cardDescription, { color: theme.textSecondary }]}>
+                    {option.description}
+                  </Text>
+
+                  <View style={[styles.cardButton, { backgroundColor: theme.nearuAccent }]}>
+                    <Text style={styles.cardButtonText}>{option.buttonText}</Text>
+                    <ButtonIcon size={20} color="#FFFFFF" />
                   </View>
-
-                  <View style={styles.cardContent}>
-                    <Text style={[styles.cardTitle, { color: theme.text }]}>{option.title}</Text>
-                    <Text style={[styles.cardDescription, { color: theme.textSecondary }]}>
-                      {option.description}
-                    </Text>
-
-                    <View style={[styles.cardButton, { backgroundColor: theme.nearuAccent }]}>
-                      <Text style={styles.cardButtonText}>{option.buttonText}</Text>
-                      <ButtonIcon size={20} color="#FFFFFF" />
-                    </View>
-                  </View>
-                </Pressable>
-              );
-            })}
-          </View>
-        </ScrollView>
-      </SafeAreaView>
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  scrollContent: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 48 },
-  hero: { marginBottom: 28, marginTop: 8 },
-  heroTitle: { fontSize: 30, fontWeight: '700', lineHeight: 38, marginBottom: 12 },
-  heroSubtitle: { fontSize: 15, lineHeight: 22 },
+
+  // ── Banner ──
+  bannerContainer: {
+    height: 200,
+    width: '100%',
+    position: 'relative',
+    justifyContent: 'flex-end',
+  },
+  bannerImage: {
+    ...StyleSheet.absoluteFillObject,
+    resizeMode: 'cover',
+    width: '100%',
+    height: '100%',
+  },
+  backButtonContainer: {
+    position: 'absolute',
+    left: 20,
+    top: 0,
+    zIndex: 10,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  titleOverlay: {
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    zIndex: 2,
+  },
+  bannerTitle: {
+    color: '#FFFFFF',
+    fontSize: 28,
+    fontWeight: '900',
+    letterSpacing: -0.5,
+  },
+  bannerSubtitle: {
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 13,
+    fontWeight: '500',
+    marginTop: 2,
+  },
+
+  // ── Scroll content 
+  scrollContent: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 48 },
   cardsContainer: { gap: 20 },
+
+  // ── Cards 
   card: { borderRadius: 24, borderWidth: 1.5, overflow: 'hidden' },
   cardImageWrap: { height: 180, width: '100%' },
   cardImage: { width: '100%', height: '100%' },
