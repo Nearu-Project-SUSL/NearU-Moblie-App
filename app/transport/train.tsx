@@ -40,7 +40,7 @@ export default function TrainListScreen() {
     <View style={[styles.flex, { backgroundColor: theme.background }]}>
       <View style={styles.bannerContainer}>
         <Image
-          source={{ uri: 'https://images.unsplash.com/photo-1607607495455-cae135756707?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080' }}
+          source={require('../../assets/train.jpg')}
           style={styles.bannerImage}
         />
         <LinearGradient
