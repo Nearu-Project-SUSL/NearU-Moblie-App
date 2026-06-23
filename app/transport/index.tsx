@@ -19,7 +19,7 @@ type TransportOption = {
   id: string;
   title: string;
   description: string;
-  image: string;
+  image: any;
   buttonText: string;
   ButtonIcon: typeof Bus;
   route: '/transport/tuk' | '/transport/bus' | '/transport/train';
@@ -40,7 +40,7 @@ export default function TransportSelectionScreen() {
       id: 'tuk',
       title: 'Tuk Rides',
       description: 'Instant ride-hailing for short distances. Perfect for quick trips between faculties or local hangouts.',
-      image: '../../assets/tuktuk.jpg',
+      image: require('../../assets/tuktuk.jpg'),
       buttonText: 'View Tuk Riders',
       ButtonIcon: ArrowRight,
       route: '/transport/tuk',
@@ -50,7 +50,7 @@ export default function TransportSelectionScreen() {
       id: 'bus',
       title: 'Bus Routine',
       description: 'Accurate times on public bus services. Track arrival times and plan ahead.',
-      image: '../../assets/bus.jpg',
+      image: require('../../assets/bus.jpg'),
       buttonText: 'View Routine',
       ButtonIcon: Bus,
       route: '/transport/bus',
@@ -60,7 +60,7 @@ export default function TransportSelectionScreen() {
       id: 'train',
       title: 'Train Routine',
       description: 'Inter-city connections and railway timings. Find the best train to get you home for the weekend.',
-      image: '../../assets/train.jpg',
+      image: require('../../assets/train.jpg'),
       buttonText: 'Check Times',
       ButtonIcon: Train,
       route: '/transport/train',
@@ -134,7 +134,7 @@ export default function TransportSelectionScreen() {
                 ]}
               >
                 <View style={styles.cardImageWrap}>
-                  <Image source={{ uri: option.image }} style={styles.cardImage} resizeMode="cover" />
+                  <Image source={option.image} style={styles.cardImage} resizeMode="cover" />
                   <LinearGradient
                     colors={['transparent', 'rgba(0,0,0,0.55)', 'rgba(0,0,0,0.85)']}
                     style={StyleSheet.absoluteFillObject}
