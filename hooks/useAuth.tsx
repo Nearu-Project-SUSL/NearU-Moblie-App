@@ -67,13 +67,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const loadSession = async () => {
       try {
+        let token: string | null = null;
+        let refresh: string | null = null;
+        let userDataStr: string | null = null;
+
         if (Platform.OS === 'web') {
-          return; // SecureStore not supported on web
+          token = localStorage.getItem('authToken');
+          refresh = localStorage.getItem('refreshToken');
+          userDataStr = localStorage.getItem('userData');
+        } else {
+          token = await SecureStore.getItemAsync('authToken');
+          refresh = await SecureStore.getItemAsync('refreshToken');
+          userDataStr = await SecureStore.getItemAsync('userData');
         }
-        const token = await SecureStore.getItemAsync('authToken');
-        const refresh = await SecureStore.getItemAsync('refreshToken');
-        const userDataStr = await SecureStore.getItemAsync('userData');
-        
+
         if (token && userDataStr) {
           setStoredTokens(token, refresh);
           setUser(JSON.parse(userDataStr));

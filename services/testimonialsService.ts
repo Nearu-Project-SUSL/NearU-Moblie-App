@@ -13,7 +13,7 @@ export interface Testimonial {
 }
 
 export async function getTestimonials(): Promise<Testimonial[]> {
-  const response = await axios.get<Testimonial[]>(`${API_BASE}/testimonials`);
+  const response = await apiClient.get<Testimonial[]>(`/testimonials`);
   return response.data;
 }
 
@@ -21,6 +21,6 @@ export async function submitTestimonial(data: {
   message: string;
   rating: number;
 }): Promise<Testimonial> {
-  const response = await axios.post<Testimonial>(`${API_BASE}/testimonials`, data);
+  const response = await apiClient.post<Testimonial>(`/testimonials`, data);
   return response.data;
 }

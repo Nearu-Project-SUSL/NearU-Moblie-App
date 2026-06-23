@@ -357,6 +357,8 @@ export default function HomeScreen() {
                     router.push('/gifts');
                   } else if (service.id === 'accommodation') {
                     router.push('/accommodations');
+                  } else if (service.id === 'transport') {
+                    router.push('/transport');
                   } else if (service.id === 'photography') {
                     router.push('/photography');
                   } else {
