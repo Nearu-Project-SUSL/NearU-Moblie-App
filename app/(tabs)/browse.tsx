@@ -291,8 +291,10 @@ export default function HomeScreen() {
       Alert.alert('Thank you!', 'Your experience has been shared.');
       fetchTestimonials();
       setCurrentPage(0);
-    } catch {
-      Alert.alert('Error', 'Failed to submit. Please try again.');
+    } catch (err: any) {
+      console.log('Testimonial error details:', err?.response?.data || err);
+      const errMsg = err?.response?.data?.message || err?.message || 'Failed to submit. Please try again.';
+      Alert.alert('Error', errMsg);
     } finally {
       setSubmitting(false);
     }
