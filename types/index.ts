@@ -80,7 +80,13 @@ export interface HotDeal {
   badge: string;
   badgeColor: string;
   imageUrl?: string;
+  shopName?: string;
+  shopType?: string;
+  shopAddress?: string | null;
+  validFrom?: string | null;
+  validTo?: string | null;
 }
+
 
 
 export interface HomeService {
@@ -158,5 +164,25 @@ export interface UpdateJobData {
   tags?: string[];
   isNew?: boolean;
 }
+
+export interface DealResponseDto {
+  id: string;
+  shopName: string;
+  shopType: string;
+  title: string;
+  description: string;
+  badgeText: string;
+  badgeColor: string;
+  imageUrl: string | null;
+  validFrom: string | null;
+  validTo: string | null;
+  submittedByUserId: string;
+  submittedByName: string;
+  shopAddress: string | null;
+  approvalStatus: string;
+  rejectionReason: string | null;
+  createdAt: string;
+}
+
 
 
