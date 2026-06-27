@@ -1,6 +1,8 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { API_BASE_URL } from '../constants/API_Endpoints';
 import { ApiResponse } from '../types';
+import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 
 // Standard storage placeholders (in real Expo we would use expo-secure-store)
 let cachedAuthToken: string | null = null;
@@ -29,6 +31,20 @@ export const apiClient = axios.create({
 // Request Interceptor: Inject Auth Header dynamically
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
+    // Self-healing token restoration
+    if (!cachedAuthToken && Platform.OS !== 'web') {
+      try {
+        const token = await SecureStore.getItemAsync('authToken');
+        const refresh = await SecureStore.getItemAsync('refreshToken');
+        if (token) {
+          setStoredTokens(token, refresh);
+        }
+      } catch (err) {
+        console.error('[API Interceptor] Failed to restore token from SecureStore:', err);
+      }
+    }
+
+    console.log(`[API Request] Method: ${config.method?.toUpperCase()} | URL: ${config.url} | Token exists: ${!!cachedAuthToken}`);
     if (cachedAuthToken) {
       config.headers.Authorization = `Bearer ${cachedAuthToken}`;
     }
@@ -53,17 +69,29 @@ apiClient.interceptors.response.use(
           refreshToken: cachedRefreshToken,
         });
 
-        if (refreshResponse.status === 200 && refreshResponse.data?.token) {
-          const { token, refreshToken } = refreshResponse.data;
-          setStoredTokens(token, refreshToken);
+        const tokenData = refreshResponse.data?.data;
+        const accessToken = tokenData?.accessToken || tokenData?.token || refreshResponse.data?.token || refreshResponse.data?.accessToken;
+        const newRefreshToken = tokenData?.refreshToken || refreshResponse.data?.refreshToken || cachedRefreshToken;
+
+        if (refreshResponse.status === 200 && accessToken) {
+          setStoredTokens(accessToken, newRefreshToken);
           
           // Re-trigger original request with updated header
-          originalRequest.headers.Authorization = `Bearer ${token}`;
+          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
           return apiClient(originalRequest);
         }
       } catch (refreshErr) {
-        // Refresh token failed, clear credentials
+        // Refresh token failed, clear credentials in memory and SecureStore
         setStoredTokens(null, null);
+        if (Platform.OS !== 'web') {
+          try {
+            await SecureStore.deleteItemAsync('authToken');
+            await SecureStore.deleteItemAsync('refreshToken');
+            await SecureStore.deleteItemAsync('userData');
+          } catch (err) {
+            console.error('[API Interceptor] Failed to clear SecureStore on refresh failure:', err);
+          }
+        }
         return Promise.reject(refreshErr);
       }
     }

@@ -15,6 +15,7 @@ import {
   Modal,
   KeyboardAvoidingView,
   Alert,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -45,6 +46,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { getTestimonials, Testimonial, submitTestimonial } from '../../services/testimonialsService';
 import TestimonialCard from '../../components/home/TestimonialCard';
+import { getApprovedDeals } from '../../services/deal';
+import { Modal as CustomModal } from '../../components/Modal';
+
 
 
 
@@ -145,6 +149,9 @@ export default function HomeScreen() {
 
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [loadingTestimonials, setLoadingTestimonials] = useState(true);
+  const [deals, setDeals] = useState<HotDeal[]>(HOT_DEALS);
+  const [loadingDeals, setLoadingDeals] = useState(true);
+  const [selectedDeal, setSelectedDeal] = useState<HotDeal | null>(null);
   const { width: SCREEN_WIDTH } = Dimensions.get('window');
   const CARD_WIDTH = SCREEN_WIDTH - 48;
   const [currentPage, setCurrentPage] = useState(0);
@@ -155,12 +162,43 @@ export default function HomeScreen() {
   const autoRotateRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const flatListRef = useRef<FlatList>(null);
 
+  const fetchDeals = useCallback(async () => {
+    try {
+      const data = await getApprovedDeals();
+      if (data && data.length > 0) {
+        const mapped = data.map(item => ({
+          id: item.id,
+          title: item.title,
+          description: item.description,
+          badge: item.badgeText,
+          badgeColor: item.badgeColor || '#EF4444',
+          imageUrl: item.imageUrl || undefined,
+          shopName: item.shopName,
+          shopType: item.shopType,
+          shopAddress: item.shopAddress,
+          validFrom: item.validFrom,
+          validTo: item.validTo,
+        }));
+        setDeals(mapped);
+      }
+    } catch (err) {
+      console.log('Error fetching deals:', err);
+    } finally {
+      setLoadingDeals(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchDeals();
+  }, [fetchDeals]);
+
   useEffect (() => {
     getTestimonials()
       .then(setTestimonials)
       .catch(() => {})
       .finally(() => setLoadingTestimonials(false))
   }, []);
+
 
   const StarRating = ({
     rating,
@@ -253,8 +291,10 @@ export default function HomeScreen() {
       Alert.alert('Thank you!', 'Your experience has been shared.');
       fetchTestimonials();
       setCurrentPage(0);
-    } catch {
-      Alert.alert('Error', 'Failed to submit. Please try again.');
+    } catch (err: any) {
+      console.log('Testimonial error details:', err?.response?.data || err);
+      const errMsg = err?.response?.data?.message || err?.message || 'Failed to submit. Please try again.';
+      Alert.alert('Error', errMsg);
     } finally {
       setSubmitting(false);
     }
@@ -376,7 +416,13 @@ export default function HomeScreen() {
             subtitle="Limited time campus exclusives"
             icon={<Tag size={20} color="#F59E0B" />}
             rightElement={
-              <Pressable style={styles.viewAllButton}>
+              <Pressable
+                style={styles.viewAllButton}
+                onPress={() => {
+                  HapticService.triggerSelection();
+                  router.push('/deals');
+                }}
+              >
                 <Text style={[styles.viewAllText, { color: Colors.brand.accent }]}>
                   View All
                 </Text>
@@ -385,8 +431,16 @@ export default function HomeScreen() {
             }
           />
           <FlatList
-            data={HOT_DEALS}
-            renderItem={({ item }) => <DealCard deal={item} />}
+            data={deals}
+            renderItem={({ item }) => (
+              <DealCard
+                deal={item}
+                onPress={() => {
+                  HapticService.triggerSelection();
+                  setSelectedDeal(item);
+                }}
+              />
+            )}
             keyExtractor={(item) => item.id}
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -592,7 +646,102 @@ export default function HomeScreen() {
           </KeyboardAvoidingView>
         </Modal>
 
-        
+        {/* Deal Details Modal */}
+        <CustomModal
+          visible={selectedDeal !== null}
+          onClose={() => setSelectedDeal(null)}
+          title="Deal Details"
+          height={480}
+        >
+          {selectedDeal && (
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.modalScroll}>
+              {/* Deal Image with Badge */}
+              <View style={styles.modalImageContainer}>
+                {selectedDeal.imageUrl ? (
+                  <Image
+                    source={
+                      typeof selectedDeal.imageUrl === 'string' && selectedDeal.imageUrl.startsWith('http')
+                        ? { uri: selectedDeal.imageUrl }
+                        : selectedDeal.imageUrl as any
+                    }
+                    style={styles.modalImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={[styles.modalImagePlaceholder, { backgroundColor: themeColors.nearuAccentSubtle }]} />
+                )}
+                <LinearGradient
+                  colors={['transparent', 'rgba(15, 23, 42, 0.75)']}
+                  style={styles.modalImageGradient}
+                />
+                <View style={[styles.modalBadge, { backgroundColor: selectedDeal.badgeColor || Colors.brand.accent }]}>
+                  <Text style={styles.modalBadgeText}>{selectedDeal.badge}</Text>
+                </View>
+              </View>
+
+              {/* Shop Name & Type */}
+              <View style={styles.modalShopRow}>
+                <Text style={[styles.modalShopName, { color: Colors.brand.accent }]}>
+                  {selectedDeal.shopName || 'NearU Partner'}
+                </Text>
+                {selectedDeal.shopType && (
+                  <View style={[styles.shopTypeBadge, { backgroundColor: themeColors.surfaceElevated }]}>
+                    <Text style={[styles.shopTypeBadgeText, { color: themeColors.textSecondary }]}>
+                      {selectedDeal.shopType}
+                    </Text>
+                  </View>
+                )}
+              </View>
+
+              {/* Address if available */}
+              {selectedDeal.shopAddress && (
+                <View style={styles.modalAddressRow}>
+                  <MapPin size={14} color={themeColors.textSecondary} />
+                  <Text style={[styles.modalAddressText, { color: themeColors.textSecondary }]} numberOfLines={1}>
+                    {selectedDeal.shopAddress}
+                  </Text>
+                </View>
+              )}
+
+              {/* Title */}
+              <Text style={[styles.modalDealTitle, { color: themeColors.text }]}>
+                {selectedDeal.title}
+              </Text>
+
+              {/* Valid Dates */}
+              {(selectedDeal.validFrom || selectedDeal.validTo) && (
+                <View style={[styles.modalDatesRow, { borderColor: themeColors.border }]}>
+                  <View style={styles.dateBlock}>
+                    <Text style={[styles.dateLabel, { color: themeColors.textMuted }]}>Valid From</Text>
+                    <Text style={[styles.dateValue, { color: themeColors.text }]}>
+                      {selectedDeal.validFrom ? new Date(selectedDeal.validFrom).toLocaleDateString() : 'Immediate'}
+                    </Text>
+                  </View>
+                  <View style={[styles.dateDivider, { backgroundColor: themeColors.border }]} />
+                  <View style={styles.dateBlock}>
+                    <Text style={[styles.dateLabel, { color: themeColors.textMuted }]}>Valid Until</Text>
+                    <Text style={[styles.dateValue, { color: themeColors.text }]}>
+                      {selectedDeal.validTo ? new Date(selectedDeal.validTo).toLocaleDateString() : 'Open Validation'}
+                    </Text>
+                  </View>
+                </View>
+              )}
+
+              {/* Description */}
+              <Text style={[styles.modalSectionLabel, { color: themeColors.textMuted }]}>Offer Terms & Description</Text>
+              <Text style={[styles.modalDesc, { color: themeColors.textSecondary }]}>
+                {selectedDeal.description}
+              </Text>
+
+              <TouchableOpacity
+                style={[styles.modalCloseButton, { backgroundColor: Colors.brand.accent }]}
+                onPress={() => setSelectedDeal(null)}
+              >
+                <Text style={styles.modalCloseButtonText}>Close Window</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          )}
+        </CustomModal>
 
         {/* Bottom safe area spacing adjusted for floating bottom navigation tab bar */}
         <View style={{ height: insets.bottom + 90 }} />
@@ -915,6 +1064,132 @@ const styles = StyleSheet.create({
   submitBtnText: {
     color: '#FFFFFF',
     fontSize: 16,
+    fontWeight: '700',
+  },
+  // Deal Modal Styles
+  modalScroll: {
+    paddingBottom: 24,
+  },
+  modalImageContainer: {
+    width: '100%',
+    height: 180,
+    borderRadius: 18,
+    overflow: 'hidden',
+    position: 'relative',
+    marginBottom: 16,
+  },
+  modalImage: {
+    width: '100%',
+    height: '100%',
+  },
+  modalImagePlaceholder: {
+    width: '100%',
+    height: '100%',
+  },
+  modalImageGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 70,
+  },
+  modalBadge: {
+    position: 'absolute',
+    top: 14,
+    right: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  modalBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  modalShopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  modalShopName: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  shopTypeBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  shopTypeBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  modalAddressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 12,
+  },
+  modalAddressText: {
+    fontSize: 12,
+    fontWeight: '500',
+    flex: 1,
+  },
+  modalDealTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    letterSpacing: -0.3,
+    marginBottom: 16,
+  },
+  modalDatesRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    marginBottom: 16,
+  },
+  dateBlock: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  dateLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    marginBottom: 4,
+    textTransform: 'uppercase',
+  },
+  dateValue: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  dateDivider: {
+    width: 1,
+    height: 30,
+  },
+  modalSectionLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 6,
+  },
+  modalDesc: {
+    fontSize: 14,
+    fontWeight: '500',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  modalCloseButton: {
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCloseButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
     fontWeight: '700',
   },
 });

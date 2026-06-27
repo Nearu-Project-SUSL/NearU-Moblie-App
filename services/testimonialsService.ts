@@ -21,6 +21,6 @@ export async function submitTestimonial(data: {
   message: string;
   rating: number;
 }): Promise<Testimonial> {
-  const response = await axios.post<Testimonial>(`${API_BASE}/testimonials`, data);
+  const response = await apiClient.post<Testimonial>('/testimonials', data);
   return response.data;
 }
