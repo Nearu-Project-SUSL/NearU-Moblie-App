@@ -15,10 +15,23 @@ import { Colors } from '../../constants/Colors';
 import { HapticService } from '../../services/HapticService';
 import { Bike, Navigation, Calendar, Search, MapPin, Clock, Star, DollarSign, Send } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useAuth } from '../../hooks/useAuth';
+import RiderActiveRide from '../../components/rider/RiderActiveRide';
+import BusinessMenuManager from '../../components/business/BusinessMenuManager';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 export default function RidesTabScreen() {
+  const { user } = useAuth();
+
+  if (user?.role === 'Rider') {
+    return <RiderActiveRide />;
+  }
+
+  if (user?.role === 'Business') {
+    return <BusinessMenuManager />;
+  }
+
   const systemTheme = useColorScheme() ?? 'light';
   const themeColors = Colors[systemTheme];
   const insets = useSafeAreaInsets();

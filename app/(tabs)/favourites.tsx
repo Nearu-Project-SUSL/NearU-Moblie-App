@@ -12,6 +12,9 @@ import { Colors } from '../../constants/Colors';
 import { HapticService } from '../../services/HapticService';
 import { Card } from '../../components/Card';
 import { Heart, Star, MapPin, DollarSign, Trash2, ArrowRight } from 'lucide-react-native';
+import { useAuth } from '../../hooks/useAuth';
+import RiderHistoryView from '../../components/rider/RiderHistoryView';
+import BusinessDealsView from '../../components/business/BusinessDealsView';
 
 interface FavItem {
   id: string;
@@ -25,6 +28,16 @@ interface FavItem {
 }
 
 export default function FavouritesScreen() {
+  const { user } = useAuth();
+
+  if (user?.role === 'Rider') {
+    return <RiderHistoryView />;
+  }
+
+  if (user?.role === 'Business') {
+    return <BusinessDealsView />;
+  }
+
   const systemTheme = useColorScheme() ?? 'light';
   const themeColors = Colors[systemTheme];
   const insets = useSafeAreaInsets();

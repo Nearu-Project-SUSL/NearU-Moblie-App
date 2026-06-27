@@ -111,3 +111,36 @@ export async function updateShop(
 export async function deleteShop(shopId: string): Promise<void> {
   await apiClient.delete(`/foodshops/${shopId}`);
 }
+
+export async function addMenuItem(
+  shopId: string,
+  data: {
+    name: string;
+    description: string;
+    price: number;
+    photo?: { uri: string; name: string; type: string } | null;
+  }
+): Promise<MenuItemResponse> {
+  const formData = new FormData();
+  formData.append('name', data.name);
+  formData.append('description', data.description);
+  formData.append('price', String(data.price));
+  if (data.photo) {
+    formData.append('photo', {
+      uri: data.photo.uri,
+      name: data.photo.name,
+      type: data.photo.type,
+    } as any);
+  }
+
+  const response = await apiClient.post<MenuItemResponse>(
+    `/foodshops/${shopId}/menuItems`,
+    formData,
+    { headers: { 'Content-Type': 'multipart/form-data' } }
+  );
+  return response.data;
+}
+
+export async function deleteMenuItem(shopId: string, itemId: string): Promise<void> {
+  await apiClient.delete(`/foodshops/${shopId}/menuItems/${itemId}`);
+}
