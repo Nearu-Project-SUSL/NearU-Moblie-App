@@ -21,7 +21,7 @@ import BusinessMenuManager from '../../components/business/BusinessMenuManager';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
-export default function RidesTabScreen() {
+export default function RidesTabContainer() {
   const { user } = useAuth();
 
   if (user?.role === 'Rider') {
@@ -31,6 +31,12 @@ export default function RidesTabScreen() {
   if (user?.role === 'Business') {
     return <BusinessMenuManager />;
   }
+
+  return <RidesTabScreen />;
+}
+
+function RidesTabScreen() {
+  const { user } = useAuth();
 
   const systemTheme = useColorScheme() ?? 'light';
   const themeColors = Colors[systemTheme];

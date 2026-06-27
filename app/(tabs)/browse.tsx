@@ -138,8 +138,8 @@ const HOT_DEALS: HotDeal[] = [
 
 // ── Component ──────────────────────────────────────────────────────────────
 
-export default function HomeScreen() {
-  const { user, isAuthenticated } = useAuth();
+export default function BrowseTabContainer() {
+  const { user } = useAuth();
 
   if (user?.role === 'Rider') {
     return <RiderDashboard />;
@@ -148,6 +148,12 @@ export default function HomeScreen() {
   if (user?.role === 'Business') {
     return <BusinessDashboard />;
   }
+
+  return <HomeScreen />;
+}
+
+function HomeScreen() {
+  const { user, isAuthenticated } = useAuth();
 
   const router = useRouter();
   const systemTheme = useColorScheme() ?? 'light';

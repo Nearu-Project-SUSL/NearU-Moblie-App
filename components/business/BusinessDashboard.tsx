@@ -15,11 +15,13 @@ import { Card } from '../Card';
 import { Button } from '../Button';
 import { Modal } from '../Modal';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { businessService, BusinessStatus, FoodShopPayload } from '../../services/businessService';
 import { getMyDeals, deleteDeal } from '../../services/deal';
 import { getMenuItems, ShopResponse } from '../../services/foodshop';
 import { useAuth } from '../../hooks/useAuth';
 import { apiClient } from '../../services/api';
+import { NearULogo } from '../NearULogo';
 import {
   Store,
   UtensilsCrossed,
@@ -32,13 +34,15 @@ import {
   Phone,
   MapPin,
   FileText,
-  Percent
+  Percent,
+  Bell
 } from 'lucide-react-native';
 
 export default function BusinessDashboard() {
   const { user } = useAuth();
   const systemTheme = useColorScheme() ?? 'light';
   const themeColors = Colors[systemTheme];
+  const insets = useSafeAreaInsets();
 
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -119,7 +123,6 @@ export default function BusinessDashboard() {
     
     setActionLoading(true);
     try {
-      // API call to post deal: POST /deals
       const payload = {
         foodShopId: shop?.id,
         title: dealForm.title,
@@ -138,7 +141,6 @@ export default function BusinessDashboard() {
         Alert.alert('Error', 'Failed to submit deal.');
       }
     } catch (err: any) {
-      // Mock creation in Dev Fallback
       if (__DEV__) {
         const mockDeal = {
           id: 'deal_' + Math.floor(Math.random() * 10000),
@@ -197,7 +199,7 @@ export default function BusinessDashboard() {
     return (
       <ScrollView
         style={[styles.container, { backgroundColor: themeColors.background }]}
-        contentContainerStyle={styles.centerContent}
+        contentContainerStyle={[styles.centerContent, { paddingTop: insets.top }]}
       >
         {status?.status === 'Pending' && (
           <Card variant="elevated" style={styles.stateCard} padding="large">
@@ -298,57 +300,102 @@ export default function BusinessDashboard() {
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: themeColors.background }]}
+      contentContainerStyle={{ paddingTop: insets.top }}
       showsVerticalScrollIndicator={false}
     >
-      {/* Header Banner */}
-      <View style={styles.headerRow}>
-        <View style={{ flex: 1, marginRight: 10 }}>
-          <Text style={[styles.headerTitle, { color: themeColors.text }]}>Merchant Dashboard</Text>
-          <Text style={[styles.headerSubtitle, { color: Colors.brand.accent }]} numberOfLines={1}>
-            {shop.name}
-          </Text>
+      {/* ── Navigation Header ── */}
+      <View style={styles.navHeader}>
+        <View style={styles.navLeft}>
+          <NearULogo size={56} />
+          <View style={styles.navTextGroup}>
+            <Text style={[styles.navBrand, { color: Colors.brand.accent }]}>
+              NearU Merchant
+            </Text>
+            <View style={styles.locationRow}>
+              <MapPin size={11} color={themeColors.textMuted} />
+              <Text style={[styles.locationText, { color: themeColors.textMuted }]}>
+                Sabaragamuwa University
+              </Text>
+            </View>
+          </View>
         </View>
-        <Button
-          title="Post a Deal"
-          onPress={() => setDealModalOpen(true)}
-          variant="primary"
-          size="small"
-          icon={<Plus size={14} color="#FFFFFF" />}
-          style={{ backgroundColor: Colors.brand.accent, borderRadius: 20 }}
-        />
+        <Pressable
+          style={[
+            styles.notifButton,
+            {
+              backgroundColor: systemTheme === 'light' ? themeColors.surfaceElevated : themeColors.surface,
+              borderColor: themeColors.border,
+            },
+          ]}
+        >
+          <Bell size={18} color={themeColors.textSecondary} />
+          <View style={styles.notifDot} />
+        </Pressable>
       </View>
+
+      {/* ── Shop Identity Hero Card ── */}
+      <Card variant="elevated" style={styles.heroCard} padding="medium">
+        <View style={styles.heroHeader}>
+          <Store size={24} color={Colors.brand.accent} />
+          <View style={styles.shopCategoryBadge}>
+            <Text style={styles.shopCategoryText}>{shop.category || 'Food Shop'}</Text>
+          </View>
+        </View>
+        <Text style={[styles.heroShopName, { color: themeColors.text }]}>{shop.name}</Text>
+        <Text style={[styles.heroShopDesc, { color: themeColors.textSecondary }]} numberOfLines={2}>
+          {shop.description || 'Verified Campus Partner Store.'}
+        </Text>
+      </Card>
 
       {/* Analytics Stats */}
       <Text style={[styles.sectionTitle, { color: themeColors.textSecondary }]}>Shop Overview</Text>
       <View style={styles.statsGrid}>
+        {/* Stat Card 1: Menu Items */}
         <View style={styles.statCol}>
-          <Card variant="elevated" style={styles.statCard} padding="medium">
+          <LinearGradient
+            colors={systemTheme === 'light' ? ['#2E9EBF', '#156175'] : ['#1E293B', '#0F172A']}
+            style={styles.gradientStatCard}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
             <View style={styles.statHeader}>
-              <Text style={[styles.statLabel, { color: themeColors.textSecondary }]}>Menu Listed</Text>
-              <UtensilsCrossed size={16} color={Colors.brand.accent} />
+              <UtensilsCrossed size={18} color="#FFFFFF" />
             </View>
-            <Text style={[styles.statValue, { color: themeColors.text }]}>{menuCount}</Text>
-            <Text style={[styles.statSub, { color: themeColors.textMuted }]}>Items online</Text>
-          </Card>
+            <Text style={styles.statValue}>{menuCount}</Text>
+            <Text style={styles.statLabel}>Menu Items</Text>
+          </LinearGradient>
         </View>
+
+        {/* Stat Card 2: Active Offers */}
         <View style={styles.statCol}>
-          <Card variant="elevated" style={styles.statCard} padding="medium">
+          <Card variant="elevated" style={styles.statCardInner} padding="medium">
             <View style={styles.statHeader}>
-              <Text style={[styles.statLabel, { color: themeColors.textSecondary }]}>Active Offers</Text>
-              <Tag size={16} color={themeColors.success} />
+              <Tag size={18} color={themeColors.success} />
+              <Text style={[styles.statSubText, { color: themeColors.textSecondary }]}>Active Offers</Text>
             </View>
-            <Text style={[styles.statValue, { color: themeColors.text }]}>
+            <Text style={[styles.statValueDark, { color: themeColors.text }]}>
               {deals.filter(d => d.approvalStatus === 'Approved').length}
             </Text>
-            <Text style={[styles.statSub, { color: themeColors.textMuted }]}>
-              {deals.filter(d => d.approvalStatus === 'Pending').length} Pending approval
+            <Text style={[styles.statLabelDark, { color: themeColors.textSecondary }]}>
+              {deals.filter(d => d.approvalStatus === 'Pending').length} Pending
             </Text>
           </Card>
         </View>
       </View>
 
       {/* Promotions List */}
-      <Text style={[styles.sectionTitle, { color: themeColors.textSecondary }]}>Student Deals & Promotions</Text>
+      <View style={styles.sectionHeaderRow}>
+        <Text style={[styles.sectionTitle, { color: themeColors.textSecondary }]}>Active Offers & Deals</Text>
+        <Button
+          title="Post a Deal"
+          onPress={() => setDealModalOpen(true)}
+          variant="outline"
+          size="small"
+          icon={<Plus size={14} color={Colors.brand.accent} />}
+          style={{ borderRadius: 18 }}
+        />
+      </View>
+
       {deals.length === 0 ? (
         <Card variant="bordered" style={styles.emptyCard} padding="large">
           <Tag size={32} color={themeColors.textMuted} style={{ marginBottom: 8 }} />
@@ -358,7 +405,7 @@ export default function BusinessDashboard() {
         </Card>
       ) : (
         <View style={{ gap: 12 }}>
-          {deals.map((deal) => (
+          {deals.slice(0, 3).map((deal) => (
             <Card key={deal.id} variant="elevated" padding="medium">
               <View style={styles.dealRow}>
                 <View style={{ flex: 1, marginRight: 10 }}>
@@ -378,8 +425,8 @@ export default function BusinessDashboard() {
                   </View>
                   <Text style={[styles.dealDesc, { color: themeColors.textSecondary }]}>{deal.description}</Text>
                   
-                  <View style={styles.dealDetails}>
-                    <View style={styles.dealMetaItem}>
+                  <View style={styles.dealMeta}>
+                    <View style={styles.metaItem}>
                       <Percent size={12} color={Colors.brand.accent} style={{ marginRight: 4 }} />
                       <Text style={[styles.metaText, { color: themeColors.textSecondary }]}>{deal.discountPercentage}% OFF</Text>
                     </View>
@@ -472,7 +519,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 20,
-    paddingTop: 16,
   },
   loadingScreen: {
     flex: 1,
@@ -482,16 +528,18 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   centerContent: {
     flexGrow: 1,
     justifyContent: 'center',
+    alignItems: 'center',
     paddingBottom: 40,
   },
   stateCard: {
+    width: '100%',
     alignItems: 'center',
-    textAlign: 'center',
+    padding: 24,
   },
   stateTitle: {
     fontSize: 18,
@@ -554,29 +602,96 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlignVertical: 'top',
   },
-  headerRow: {
+  navHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginTop: 20,
+    marginBottom: 18,
   },
-  headerTitle: {
-    fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'uppercase',
+  navLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  headerSubtitle: {
-    fontSize: 24,
+  navTextGroup: {
+    marginLeft: 10,
+  },
+  navBrand: {
+    fontSize: 18,
     fontWeight: '800',
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginTop: 2,
+    gap: 4,
+  },
+  locationText: {
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  notifButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  notifDot: {
+    position: 'absolute',
+    top: 10,
+    right: 11,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#EF4444',
+  },
+  heroCard: {
+    marginBottom: 20,
+    borderColor: 'transparent',
+  },
+  heroHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  shopCategoryBadge: {
+    backgroundColor: 'rgba(46, 158, 191, 0.08)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  shopCategoryText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#2E9EBF',
+  },
+  heroShopName: {
+    fontSize: 20,
+    fontWeight: '800',
+    marginBottom: 6,
+  },
+  heroShopDesc: {
+    fontSize: 13,
+    lineHeight: 18,
   },
   sectionTitle: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: 12,
-    marginTop: 10,
+    paddingLeft: 4,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 12,
   },
   statsGrid: {
     flexDirection: 'row',
@@ -587,33 +702,49 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 6,
   },
-  statCard: {
+  gradientStatCard: {
+    borderRadius: 16,
+    padding: 16,
+    height: 106,
     justifyContent: 'space-between',
-    height: 100,
+  },
+  statCardInner: {
+    height: 106,
+    justifyContent: 'space-between',
   },
   statHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  statValue: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
   statLabel: {
     fontSize: 11,
     fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.8)',
     textTransform: 'uppercase',
   },
-  statValue: {
-    fontSize: 24,
+  statSubText: {
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
+  statValueDark: {
+    fontSize: 22,
     fontWeight: '800',
   },
-  statSub: {
+  statLabelDark: {
     fontSize: 11,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   emptyCard: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 32,
-    marginBottom: 20,
   },
   emptyText: {
     fontSize: 13,
@@ -649,14 +780,13 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     marginTop: 4,
   },
-  dealDetails: {
+  dealMeta: {
     flexDirection: 'row',
     marginTop: 10,
   },
-  dealMetaItem: {
+  metaItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 16,
   },
   metaText: {
     fontSize: 11,

@@ -27,7 +27,7 @@ interface FavItem {
   location?: string;
 }
 
-export default function FavouritesScreen() {
+export default function FavouritesTabContainer() {
   const { user } = useAuth();
 
   if (user?.role === 'Rider') {
@@ -37,6 +37,12 @@ export default function FavouritesScreen() {
   if (user?.role === 'Business') {
     return <BusinessDealsView />;
   }
+
+  return <FavouritesScreen />;
+}
+
+function FavouritesScreen() {
+  const { user } = useAuth();
 
   const systemTheme = useColorScheme() ?? 'light';
   const themeColors = Colors[systemTheme];

@@ -45,8 +45,8 @@ import {
 import RiderProfileView from '../../components/rider/RiderProfileView';
 import BusinessProfileView from '../../components/business/BusinessProfileView';
 
-export default function ProfileScreen() {
-  const { user, logout } = useAuth();
+export default function ProfileTabContainer() {
+  const { user } = useAuth();
 
   if (user?.role === 'Rider') {
     return <RiderProfileView />;
@@ -55,6 +55,12 @@ export default function ProfileScreen() {
   if (user?.role === 'Business') {
     return <BusinessProfileView />;
   }
+
+  return <ProfileScreen />;
+}
+
+function ProfileScreen() {
+  const { user, logout } = useAuth();
 
   const systemTheme = useColorScheme() ?? 'light';
   const themeColors = Colors[systemTheme];

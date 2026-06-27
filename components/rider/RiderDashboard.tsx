@@ -14,9 +14,11 @@ import {
 import { Colors } from '../../constants/Colors';
 import { Card } from '../Card';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { riderService, RiderStatsResponse, RideHistoryItem } from '../../services/riderService';
 import { useAuth } from '../../hooks/useAuth';
 import { HapticService } from '../../services/HapticService';
+import { NearULogo } from '../NearULogo';
 import {
   Bike,
   Star,
@@ -26,13 +28,15 @@ import {
   Clock,
   Power,
   ChevronRight,
-  ShieldAlert
+  ShieldAlert,
+  Bell
 } from 'lucide-react-native';
 
 export default function RiderDashboard() {
   const { user } = useAuth();
   const systemTheme = useColorScheme() ?? 'light';
   const themeColors = Colors[systemTheme];
+  const insets = useSafeAreaInsets();
 
   const [isOnline, setIsOnline] = useState(false);
   const [stats, setStats] = useState<RiderStatsResponse | null>(null);
@@ -94,7 +98,7 @@ export default function RiderDashboard() {
       <View style={[styles.loadingScreen, { backgroundColor: themeColors.background }]}>
         <ActivityIndicator size="large" color={Colors.brand.accent} />
         <Text style={[styles.loadingText, { color: themeColors.textSecondary }]}>
-          Loading dashboard...
+          Syncing dashboard details...
         </Text>
       </View>
     );
@@ -105,7 +109,7 @@ export default function RiderDashboard() {
     return (
       <ScrollView
         style={[styles.container, { backgroundColor: themeColors.background }]}
-        contentContainerStyle={styles.centerContent}
+        contentContainerStyle={[styles.centerContent, { paddingTop: insets.top }]}
       >
         <Card variant="elevated" style={styles.alertCard} padding="large">
           <View style={styles.alertHeader}>
@@ -132,62 +136,79 @@ export default function RiderDashboard() {
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: themeColors.background }]}
+      contentContainerStyle={{ paddingTop: insets.top }}
       showsVerticalScrollIndicator={false}
     >
-      {/* ── Header ── */}
-      <View style={styles.headerRow}>
-        <View>
-          <Text style={[styles.headerTitle, { color: themeColors.text }]}>
-            Welcome back,
-          </Text>
-          <Text style={[styles.headerSubtitle, { color: Colors.brand.accent }]}>
-            {user?.firstName} {user?.lastName}
-          </Text>
-        </View>
-        <View style={styles.badgeWrapper}>
-          <LinearGradient
-            colors={isOnline ? ['#10B981', '#059669'] : ['#64748B', '#475569']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.roleBadge}
-          >
-            <Text style={styles.roleBadgeText}>
-              {isOnline ? 'ONLINE' : 'OFFLINE'}
+      {/* ── Navigation Header ── */}
+      <View style={styles.navHeader}>
+        <View style={styles.navLeft}>
+          <NearULogo size={56} />
+          <View style={styles.navTextGroup}>
+            <Text style={[styles.navBrand, { color: Colors.brand.accent }]}>
+              NearU Partner
             </Text>
-          </LinearGradient>
-        </View>
-      </View>
-
-      {/* ── Status Card Toggle ── */}
-      <Card variant="elevated" style={styles.statusCard} padding="medium">
-        <View style={styles.toggleRow}>
-          <View style={styles.toggleInfo}>
-            <View style={[styles.powerIconBg, { backgroundColor: isOnline ? 'rgba(16, 185, 129, 0.1)' : 'rgba(148, 163, 184, 0.1)' }]}>
-              <Power size={20} color={isOnline ? '#10B981' : '#94A3B8'} />
-            </View>
-            <View>
-              <Text style={[styles.toggleTitle, { color: themeColors.text }]}>
-                Duty Status
-              </Text>
-              <Text style={[styles.toggleDesc, { color: themeColors.textSecondary }]}>
-                {isOnline ? 'Ready for student ride requests' : 'Go online to receive rides'}
+            <View style={styles.locationRow}>
+              <MapPin size={11} color={themeColors.textMuted} />
+              <Text style={[styles.locationText, { color: themeColors.textMuted }]}>
+                Sabaragamuwa University
               </Text>
             </View>
           </View>
-          {actionLoading ? (
-            <ActivityIndicator size="small" color={Colors.brand.accent} />
-          ) : (
-            <Switch
-              value={isOnline}
-              onValueChange={handleToggleOnline}
-              thumbColor={Platform.OS === 'android' ? '#FFFFFF' : undefined}
-              trackColor={{ false: '#CBD5E1', true: '#10B981' }}
-            />
-          )}
         </View>
+        <Pressable
+          style={[
+            styles.notifButton,
+            {
+              backgroundColor: systemTheme === 'light' ? themeColors.surfaceElevated : themeColors.surface,
+              borderColor: themeColors.border,
+            },
+          ]}
+        >
+          <Bell size={18} color={themeColors.textSecondary} />
+          <View style={styles.notifDot} />
+        </Pressable>
+      </View>
+
+      {/* ── Duty Status Card (Glowing tactile design) ── */}
+      <Card variant="elevated" style={StyleSheet.flatten([styles.statusCard, isOnline && styles.onlineBorder])} padding="medium">
+        <View style={styles.statusHeaderRow}>
+          <View style={[styles.statusDot, { backgroundColor: isOnline ? '#10B981' : '#64748B' }]} />
+          <Text style={[styles.statusLabelTitle, { color: themeColors.textSecondary }]}>
+            Duty Status: <Text style={{ fontWeight: '800', color: isOnline ? '#10B981' : themeColors.textSecondary }}>{isOnline ? 'ONLINE' : 'OFFLINE'}</Text>
+          </Text>
+        </View>
+
+        <Text style={[styles.statusDescriptionText, { color: themeColors.textSecondary }]}>
+          {isOnline 
+            ? 'You are active on the campus map and visible to students booking rides.' 
+            : 'Go online to start receiving ride requests from students around campus.'}
+        </Text>
+
+        {actionLoading ? (
+          <View style={styles.buttonLoader}>
+            <ActivityIndicator size="small" color={Colors.brand.accent} />
+          </View>
+        ) : (
+          <Pressable
+            onPress={() => handleToggleOnline(!isOnline)}
+            style={({ pressed }) => [
+              styles.dutyButton,
+              {
+                backgroundColor: isOnline ? '#EF4444' : '#10B981',
+                shadowColor: isOnline ? '#EF4444' : '#10B981',
+              },
+              pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }
+            ]}
+          >
+            <Power size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
+            <Text style={styles.dutyButtonText}>
+              {isOnline ? 'GO OFFLINE' : 'GO ONLINE'}
+            </Text>
+          </Pressable>
+        )}
       </Card>
 
-      {/* ── Earnings & Statistics ── */}
+      {/* ── Earnings & Statistics (Bento style grid) ── */}
       <Text style={[styles.sectionTitle, { color: themeColors.textSecondary }]}>Today's Performance</Text>
       <View style={styles.statsGrid}>
         {/* Stat: Earnings */}
@@ -213,9 +234,9 @@ export default function RiderDashboard() {
 
         {/* Stat: Rating */}
         <View style={styles.statCol}>
-          <Card variant="elevated" style={styles.statCard} padding="medium">
+          <Card variant="elevated" style={styles.statCardInner} padding="medium">
             <View style={styles.statHeader}>
-              <Star size={18} color={themeColors.warning} fill={themeColors.warning} />
+              <Star size={18} color="#F59E0B" fill="#F59E0B" />
               <Text style={[styles.statSubText, { color: themeColors.textSecondary }]}>Rating</Text>
             </View>
             <Text style={[styles.statValueDark, { color: themeColors.text }]}>
@@ -251,15 +272,15 @@ export default function RiderDashboard() {
                     <Bike size={18} color={themeColors.primary} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <View style={styles.locationRow}>
-                      <MapPin size={12} color={Colors.brand.accent} style={{ marginRight: 4 }} />
-                      <Text style={[styles.locationText, { color: themeColors.text }]} numberOfLines={1}>
+                    <View style={styles.locationRowItem}>
+                      <MapPin size={12} color={Colors.brand.accent} style={{ marginRight: 6 }} />
+                      <Text style={[styles.locationItemText, { color: themeColors.text }]} numberOfLines={1}>
                         {item.pickupLocation}
                       </Text>
                     </View>
-                    <View style={[styles.locationRow, { marginTop: 4 }]}>
-                      <MapPin size={12} color={themeColors.danger} style={{ marginRight: 4 }} />
-                      <Text style={[styles.locationText, { color: themeColors.textSecondary }]} numberOfLines={1}>
+                    <View style={[styles.locationRowItem, { marginTop: 4 }]}>
+                      <MapPin size={12} color={themeColors.danger} style={{ marginRight: 6 }} />
+                      <Text style={[styles.locationItemText, { color: themeColors.textSecondary }]} numberOfLines={1}>
                         {item.dropoffLocation}
                       </Text>
                     </View>
@@ -277,7 +298,7 @@ export default function RiderDashboard() {
                   </Text>
                   {item.rating && (
                     <View style={styles.ratingRow}>
-                      <Star size={11} color={themeColors.warning} fill={themeColors.warning} style={{ marginRight: 2 }} />
+                      <Star size={11} color="#F59E0B" fill="#F59E0B" style={{ marginRight: 2 }} />
                       <Text style={[styles.ratingText, { color: themeColors.textSecondary }]}>{item.rating}</Text>
                     </View>
                   )}
@@ -298,7 +319,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 20,
-    paddingTop: 16,
   },
   loadingScreen: {
     flex: 1,
@@ -308,7 +328,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   centerContent: {
     flexGrow: 1,
@@ -319,6 +339,7 @@ const styles = StyleSheet.create({
   alertCard: {
     width: '100%',
     alignItems: 'center',
+    padding: 24,
   },
   alertHeader: {
     marginBottom: 16,
@@ -330,9 +351,9 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   alertDesc: {
-    fontSize: 14,
+    fontSize: 13,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 18,
     marginBottom: 20,
   },
   statusBadge: {
@@ -341,41 +362,61 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   statusText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
   },
-  headerRow: {
+  navHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginTop: 20,
+    marginBottom: 18,
   },
-  headerTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+  navLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  headerSubtitle: {
-    fontSize: 24,
+  navTextGroup: {
+    marginLeft: 10,
+  },
+  navBrand: {
+    fontSize: 18,
     fontWeight: '800',
   },
-  badgeWrapper: {
-    borderRadius: 20,
-    overflow: 'hidden',
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+    gap: 4,
   },
-  roleBadge: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-  },
-  roleBadgeText: {
-    color: '#FFFFFF',
+  locationText: {
     fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 0.8,
+    fontWeight: '500',
+  },
+  notifButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  notifDot: {
+    position: 'absolute',
+    top: 10,
+    right: 11,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#EF4444',
   },
   statusCard: {
-    marginBottom: 24,
+    marginBottom: 20,
+  },
+  onlineBorder: {
+    borderColor: '#10B981',
+    borderWidth: 1,
   },
   toggleRow: {
     flexDirection: 'row',
@@ -397,24 +438,28 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   toggleTitle: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 15,
+    fontWeight: '800',
   },
   toggleDesc: {
     fontSize: 12,
     marginTop: 2,
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: 12,
+    paddingLeft: 4,
+  },
+  sectionHeaderRow: {
+    marginTop: 8,
   },
   statsGrid: {
     flexDirection: 'row',
     marginHorizontal: -6,
-    marginBottom: 24,
+    marginBottom: 20,
   },
   statCol: {
     flex: 1,
@@ -423,11 +468,11 @@ const styles = StyleSheet.create({
   gradientStatCard: {
     borderRadius: 16,
     padding: 16,
-    height: 114,
+    height: 106,
     justifyContent: 'space-between',
   },
-  statCard: {
-    height: 114,
+  statCardInner: {
+    height: 106,
     justifyContent: 'space-between',
   },
   statHeader: {
@@ -435,39 +480,34 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  statValue: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  statLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.8)',
+    textTransform: 'uppercase',
+  },
   statSubText: {
     fontSize: 11,
     fontWeight: '700',
     textTransform: 'uppercase',
   },
-  statValue: {
-    color: '#FFFFFF',
-    fontSize: 22,
-    fontWeight: '800',
-  },
   statValueDark: {
     fontSize: 22,
     fontWeight: '800',
-  },
-  statLabel: {
-    color: 'rgba(255, 255, 255, 0.75)',
-    fontSize: 11,
-    fontWeight: '600',
   },
   statLabelDark: {
     fontSize: 11,
     fontWeight: '600',
   },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
   emptyCard: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 32,
-    marginBottom: 24,
   },
   emptyText: {
     fontSize: 13,
@@ -475,16 +515,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   historyCard: {
-    marginBottom: 24,
+    overflow: 'hidden',
   },
   historyItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    padding: 16,
+    padding: 14,
     alignItems: 'center',
   },
   pressedItem: {
-    opacity: 0.9,
+    backgroundColor: 'rgba(0, 0, 0, 0.02)',
   },
   historyLeft: {
     flexDirection: 'row',
@@ -500,13 +540,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 12,
   },
-  locationRow: {
+  locationRowItem: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  locationText: {
+  locationItemText: {
     fontSize: 13,
     fontWeight: '600',
+    flex: 1,
   },
   timeRow: {
     flexDirection: 'row',
@@ -515,6 +556,7 @@ const styles = StyleSheet.create({
   },
   timeText: {
     fontSize: 11,
+    fontWeight: '500',
   },
   historyRight: {
     alignItems: 'flex-end',
@@ -530,9 +572,53 @@ const styles = StyleSheet.create({
   },
   ratingText: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   divider: {
-    height: 1,
+    height: 0.5,
+  },
+  statusHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 8,
+  },
+  statusLabelTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  statusDescriptionText: {
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 16,
+  },
+  dutyButton: {
+    height: 48,
+    borderRadius: 12,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  dutyButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+  },
+  buttonLoader: {
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
