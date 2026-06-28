@@ -48,6 +48,8 @@ import { getTestimonials, Testimonial, submitTestimonial } from '../../services/
 import TestimonialCard from '../../components/home/TestimonialCard';
 import { getApprovedDeals } from '../../services/deal';
 import { Modal as CustomModal } from '../../components/Modal';
+import RiderDashboard from '../../components/rider/RiderDashboard';
+import BusinessDashboard from '../../components/business/BusinessDashboard';
 
 
 
@@ -136,12 +138,27 @@ const HOT_DEALS: HotDeal[] = [
 
 // ── Component ──────────────────────────────────────────────────────────────
 
-export default function HomeScreen() {
+export default function BrowseTabContainer() {
+  const { user } = useAuth();
+
+  if (user?.role === 'Rider') {
+    return <RiderDashboard />;
+  }
+
+  if (user?.role === 'Business') {
+    return <BusinessDashboard />;
+  }
+
+  return <HomeScreen />;
+}
+
+function HomeScreen() {
+  const { user, isAuthenticated } = useAuth();
+
   const router = useRouter();
   const systemTheme = useColorScheme() ?? 'light';
   const themeColors = Colors[systemTheme];
   const insets = useSafeAreaInsets();
-  const { user, isAuthenticated } = useAuth();
 
 
   const firstName = user?.firstName || 'Student';

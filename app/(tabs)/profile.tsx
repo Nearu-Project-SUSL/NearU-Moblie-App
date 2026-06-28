@@ -42,9 +42,26 @@ import {
   Eye,
   EyeOff,
 } from 'lucide-react-native';
+import RiderProfileView from '../../components/rider/RiderProfileView';
+import BusinessProfileView from '../../components/business/BusinessProfileView';
 
-export default function ProfileScreen() {
+export default function ProfileTabContainer() {
+  const { user } = useAuth();
+
+  if (user?.role === 'Rider') {
+    return <RiderProfileView />;
+  }
+
+  if (user?.role === 'Business') {
+    return <BusinessProfileView />;
+  }
+
+  return <ProfileScreen />;
+}
+
+function ProfileScreen() {
   const { user, logout } = useAuth();
+
   const systemTheme = useColorScheme() ?? 'light';
   const themeColors = Colors[systemTheme];
 
