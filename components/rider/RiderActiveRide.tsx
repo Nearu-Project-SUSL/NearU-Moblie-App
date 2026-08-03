@@ -63,7 +63,7 @@ export default function RiderActiveRide() {
             const activeRes = await riderService.getActiveRide();
             if (activeRes.success && activeRes.data) {
               setActiveRide(activeRes.data);
-              setRideStatus(activeRes.data.status);
+              setRideStatus(activeRes.data.status as any);
             } else {
               setRideStatus('ONLINE_IDLE');
             }
