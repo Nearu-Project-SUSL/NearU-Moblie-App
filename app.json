@@ -29,7 +29,12 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0F172A"
       },
-      "package": "com.nearu.app"
+      "package": "com.nearu.app",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyD1n0S32uyMmOtHiM5Q4FpYMBV_BqL28WE"
+        }
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png",
