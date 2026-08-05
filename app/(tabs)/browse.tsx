@@ -416,6 +416,9 @@ function HomeScreen() {
                     router.push('/accommodations');
                   } else if (service.id === 'photography') {
                     router.push('/photography');
+                  } else if (service.id === 'rides') {
+                    HapticService.triggerSelection();
+                    router.push('/(tabs)/rides');
                   } else {
                     HapticService.triggerSelection();
                     router.push(`/service/${service.id}`);
