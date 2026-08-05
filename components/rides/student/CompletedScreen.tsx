@@ -6,14 +6,17 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, useColorScheme, ScrollView, TouchableOpacity, Animated, Easing,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CheckCircle, MapPin, Ruler, Clock, RotateCcw } from 'lucide-react-native';
 import { Colors } from '../../../constants/Colors';
 import { rideService } from '../../../services/riderService';
 import { useStudentRideStore } from '../../../store/rideStore';
+import { HapticService } from '../../../services/HapticService';
 import StarRating from '../StarRating';
 
 export default function CompletedScreen() {
+  const insets = useSafeAreaInsets();
   const scheme = useColorScheme() ?? 'light';
   const theme = Colors[scheme];
   const store = useStudentRideStore();
@@ -36,6 +39,7 @@ export default function CompletedScreen() {
 
   const handleSubmitRating = async () => {
     if (rating === 0 || rated) return;
+    HapticService.triggerSuccess();
     setSubmittingRating(true);
     await rideService.rateRide(ride.rideId, rating);
     setSubmittingRating(false);
@@ -45,7 +49,7 @@ export default function CompletedScreen() {
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: theme.background }]}
-      contentContainerStyle={{ paddingBottom: 50, paddingHorizontal: 24 }}
+      contentContainerStyle={{ paddingTop: insets.top + 20, paddingBottom: insets.bottom + 40, paddingHorizontal: 24 }}
       showsVerticalScrollIndicator={false}
     >
       {/* Success animation */}
@@ -117,7 +121,10 @@ export default function CompletedScreen() {
         </Text>
         <StarRating
           value={rating}
-          onChange={setRating}
+          onChange={(r) => {
+            HapticService.triggerSelection();
+            setRating(r);
+          }}
           readonly={rated}
           size={36}
         />
@@ -146,7 +153,10 @@ export default function CompletedScreen() {
       {/* Book again */}
       <TouchableOpacity
         style={styles.bookAgainBtn}
-        onPress={store.reset}
+        onPress={() => {
+          HapticService.triggerTap();
+          store.reset();
+        }}
         activeOpacity={0.85}
       >
         <LinearGradient
@@ -165,11 +175,11 @@ export default function CompletedScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  topSection: { alignItems: 'center', paddingTop: 48, paddingBottom: 28, gap: 14 },
-  successCircle: { width: 100, height: 100, borderRadius: 50, overflow: 'hidden' },
+  topSection: { alignItems: 'center', paddingTop: 20, paddingBottom: 24, gap: 14 },
+  successCircle: { width: 90, height: 90, borderRadius: 45, overflow: 'hidden' },
   successGradient: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  congratsText: { fontSize: 26, fontWeight: '800' },
-  thanksText: { fontSize: 14, lineHeight: 22, textAlign: 'center', paddingHorizontal: 20 },
+  congratsText: { fontSize: 24, fontWeight: '800' },
+  thanksText: { fontSize: 13, lineHeight: 20, textAlign: 'center', paddingHorizontal: 20 },
   receipt: {
     borderRadius: 16, borderWidth: 1, padding: 16, marginBottom: 16, gap: 14,
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 },

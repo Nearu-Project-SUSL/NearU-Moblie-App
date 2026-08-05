@@ -298,7 +298,10 @@ export default function ServiceDetailScreen() {
 
                 {selectedSubService === ride.type && (
                   <Pressable 
-                    onPress={() => HapticService.triggerSuccess()}
+                    onPress={() => {
+                      HapticService.triggerSuccess();
+                      router.push('/(tabs)/rides');
+                    }}
                     style={[styles.bookingConfirmBtn, { backgroundColor: service.themeColor }]}
                   >
                     <Text style={styles.bookingConfirmText}>Request {ride.type} Now</Text>

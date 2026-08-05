@@ -6,17 +6,21 @@
 
 import React, { useEffect, useState } from 'react';
 import {
-  View, Text, StyleSheet, useColorScheme, Alert, TouchableOpacity, ScrollView,
+  View, Text, StyleSheet, useColorScheme, Alert, TouchableOpacity, ScrollView, Pressable,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { User, Star, Car, MapPin, X, Navigation2 } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { User, Star, Car, MapPin, X, Navigation2, ArrowLeft } from 'lucide-react-native';
 import { Colors } from '../../../constants/Colors';
 import { rideService } from '../../../services/riderService';
 import { useStudentRideStore } from '../../../store/rideStore';
+import { HapticService } from '../../../services/HapticService';
 import OtpDisplay from '../OtpDisplay';
 import RideMap from '../RideMap';
 
 export default function AcceptedRideScreen() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
   const scheme = useColorScheme() ?? 'light';
   const theme = Colors[scheme];
   const store = useStudentRideStore();
@@ -31,6 +35,7 @@ export default function AcceptedRideScreen() {
     const interval = setInterval(async () => {
       const res = await rideService.getStudentActiveRide();
       if (res.success && res.data?.otp) {
+        HapticService.triggerSuccess();
         store.setRideAccepted({
           otp: res.data.otp,
           otpExpiresAt: res.data.otpExpiresAt,
@@ -49,8 +54,10 @@ export default function AcceptedRideScreen() {
       if (!res.success || !res.data) return;
 
       if (res.data.status === 'InProgress') {
+        HapticService.triggerSuccess();
         store.setRideInProgress();
       } else if (res.data.status === 'Cancelled' || res.data.status === 'Expired') {
+        HapticService.triggerWarning();
         Alert.alert('Ride Cancelled', 'The rider cancelled this ride.');
         store.reset();
       }
@@ -74,6 +81,7 @@ export default function AcceptedRideScreen() {
   }, [ride.rideId]);
 
   const handleCancel = () => {
+    HapticService.triggerWarning();
     Alert.alert(
       'Cancel Ride?',
       'You can still cancel since the rider is on their way. A cancellation fee may apply.',
@@ -93,6 +101,15 @@ export default function AcceptedRideScreen() {
     );
   };
 
+  const handleBack = () => {
+    HapticService.triggerTap();
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.push('/(tabs)/browse');
+    }
+  };
+
   const pickup = { latitude: ride.pickupLatitude, longitude: ride.pickupLongitude };
   const dropoff = { latitude: ride.dropoffLatitude, longitude: ride.dropoffLongitude };
   const riderLoc = ride.riderLatitude && ride.riderLongitude
@@ -104,6 +121,16 @@ export default function AcceptedRideScreen() {
       {/* ── Map ──────────────────────────────────────────────── */}
       <RideMap pickup={pickup} dropoff={dropoff} riderLocation={riderLoc} style={styles.map} />
 
+      {/* ── Floating Header Back Button ────────────────────── */}
+      <View style={[styles.backButtonContainer, { paddingTop: insets.top + 8 }]}>
+        <Pressable
+          onPress={handleBack}
+          style={[styles.backButton, { backgroundColor: scheme === 'light' ? 'rgba(255,255,255,0.9)' : 'rgba(30,41,59,0.9)' }]}
+        >
+          <ArrowLeft size={20} color={theme.text} />
+        </Pressable>
+      </View>
+
       {/* ── Bottom Sheet ─────────────────────────────────────── */}
       <ScrollView
         style={[styles.sheet, { backgroundColor: theme.surface }]}
@@ -112,7 +139,7 @@ export default function AcceptedRideScreen() {
       >
         {/* Status chip */}
         <View style={styles.statusRow}>
-          <View style={[styles.statusChip, { backgroundColor: Colors.brand.accentDark + '20' }]}>
+          <View style={[styles.statusChip, { backgroundColor: Colors.brand.accent + '20' }]}>
             <View style={[styles.statusDot, { backgroundColor: Colors.brand.accent }]} />
             <Text style={[styles.statusText, { color: Colors.brand.accent }]}>Rider Accepted</Text>
           </View>
@@ -193,6 +220,24 @@ export default function AcceptedRideScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   map: { flex: 0.45 },
+  backButtonContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 16,
+    zIndex: 99,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 5,
+  },
   sheet: { flex: 0.55, borderTopLeftRadius: 24, borderTopRightRadius: 24 },
   statusRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   statusChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 20 },

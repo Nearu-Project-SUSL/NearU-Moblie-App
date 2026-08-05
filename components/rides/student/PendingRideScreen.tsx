@@ -6,16 +6,20 @@
 import React, { useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, useColorScheme,
-  Animated, Alert, TouchableOpacity, Easing,
+  Animated, Alert, TouchableOpacity, Easing, Pressable,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { X, MapPin, Navigation } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { X, MapPin, Navigation, ArrowLeft } from 'lucide-react-native';
 import { Colors } from '../../../constants/Colors';
 import { rideService } from '../../../services/riderService';
 import { useStudentRideStore } from '../../../store/rideStore';
+import { HapticService } from '../../../services/HapticService';
 import RideMap from '../RideMap';
 
 export default function PendingRideScreen() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
   const scheme = useColorScheme() ?? 'light';
   const theme = Colors[scheme];
   const store = useStudentRideStore();
@@ -56,8 +60,10 @@ export default function PendingRideScreen() {
 
       const { status, otp, otpExpiresAt } = res.data;
       if (status === 'Accepted') {
+        HapticService.triggerSuccess();
         store.setRideAccepted({ otp, otpExpiresAt });
       } else if (status === 'Cancelled' || status === 'Expired') {
+        HapticService.triggerWarning();
         Alert.alert('Ride Cancelled', 'Your ride request was cancelled or expired.');
         store.reset();
       }
@@ -69,6 +75,7 @@ export default function PendingRideScreen() {
   }, []);
 
   const handleCancel = () => {
+    HapticService.triggerWarning();
     Alert.alert('Cancel Ride?', 'Are you sure you want to cancel this request?', [
       { text: 'No', style: 'cancel' },
       {
@@ -82,6 +89,15 @@ export default function PendingRideScreen() {
     ]);
   };
 
+  const handleBack = () => {
+    HapticService.triggerTap();
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.push('/(tabs)/browse');
+    }
+  };
+
   const pickup = { latitude: activeRide.pickupLatitude, longitude: activeRide.pickupLongitude };
   const dropoff = { latitude: activeRide.dropoffLatitude, longitude: activeRide.dropoffLongitude };
 
@@ -89,6 +105,16 @@ export default function PendingRideScreen() {
     <View style={styles.container}>
       {/* ── Map background ─────────────────────────────────── */}
       <RideMap pickup={pickup} dropoff={dropoff} style={styles.map} />
+
+      {/* ── Floating Header Back Button ────────────────────── */}
+      <View style={[styles.backButtonContainer, { paddingTop: insets.top + 8 }]}>
+        <Pressable
+          onPress={handleBack}
+          style={[styles.backButton, { backgroundColor: scheme === 'light' ? 'rgba(255,255,255,0.9)' : 'rgba(30,41,59,0.9)' }]}
+        >
+          <ArrowLeft size={20} color={theme.text} />
+        </Pressable>
+      </View>
 
       {/* ── Bottom sheet ───────────────────────────────────── */}
       <View style={[styles.sheet, { backgroundColor: theme.surface, borderColor: theme.border }]}>
@@ -157,6 +183,24 @@ export default function PendingRideScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   map: { flex: 1 },
+  backButtonContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 16,
+    zIndex: 99,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 5,
+  },
   sheet: {
     paddingHorizontal: 24, paddingTop: 8, paddingBottom: 36,
     borderTopLeftRadius: 24, borderTopRightRadius: 24, borderTopWidth: 1,
