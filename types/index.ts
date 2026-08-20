@@ -184,5 +184,4 @@ export interface DealResponseDto {
   createdAt: string;
 }
 
-
-
+export * from './notification';

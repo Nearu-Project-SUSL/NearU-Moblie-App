@@ -50,6 +50,7 @@ import { getApprovedDeals } from '../../services/deal';
 import { Modal as CustomModal } from '../../components/Modal';
 import RiderDashboard from '../../components/rider/RiderDashboard';
 import BusinessDashboard from '../../components/business/BusinessDashboard';
+import { NotificationBell } from '../../components/notifications';
 
 
 
@@ -344,21 +345,7 @@ function HomeScreen() {
               </View>
             </View>
           </View>
-          <Pressable
-            style={[
-              styles.notifButton,
-              {
-                backgroundColor: systemTheme === 'light'
-                  ? themeColors.surfaceElevated
-                  : themeColors.surface,
-                borderColor: themeColors.border,
-              },
-            ]}
-          >
-            <Bell size={18} color={themeColors.textSecondary} />
-            {/* Notification dot */}
-            <View style={styles.notifDot} />
-          </Pressable>
+          <NotificationBell size={42} iconSize={18} />
         </View>
 
         {/* ── Improved Hero Greeting Card (Vibrant LinearGradient) ── */}
