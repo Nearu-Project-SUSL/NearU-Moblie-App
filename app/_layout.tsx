@@ -6,10 +6,15 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SecureStore from 'expo-secure-store';
 import { AuthProvider, useAuth } from '../hooks/useAuth';
 import { Colors } from '../constants/Colors';
+import { NotificationToastBanner, NotificationModal } from '../components/notifications';
+import { useNotifications } from '../hooks/useNotifications';
 
 
 function RootNavigationLayout() {
   const { isAuthenticated, isSessionLoading } = useAuth();
+  // Initializes real-time SignalR listener and notification synchronization
+  useNotifications();
+
   const segments = useSegments() as string[];
   const router = useRouter();
   const systemTheme = useColorScheme() ?? 'light';
@@ -63,7 +68,9 @@ function RootNavigationLayout() {
   return (
     <View style={{ flex: 1, backgroundColor: themeColors.background }}>
       <StatusBar style={systemTheme === 'dark' ? 'light' : 'dark'} />
+      <NotificationToastBanner />
       <Slot />
+      <NotificationModal />
     </View>
   );
 }

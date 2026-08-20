@@ -37,6 +37,7 @@ import {
   Percent,
   Bell
 } from 'lucide-react-native';
+import { NotificationBell } from '../notifications';
 
 export default function BusinessDashboard() {
   const { user } = useAuth();
@@ -319,18 +320,7 @@ export default function BusinessDashboard() {
             </View>
           </View>
         </View>
-        <Pressable
-          style={[
-            styles.notifButton,
-            {
-              backgroundColor: systemTheme === 'light' ? themeColors.surfaceElevated : themeColors.surface,
-              borderColor: themeColors.border,
-            },
-          ]}
-        >
-          <Bell size={18} color={themeColors.textSecondary} />
-          <View style={styles.notifDot} />
-        </Pressable>
+        <NotificationBell size={42} iconSize={18} />
       </View>
 
       {/* ── Shop Identity Hero Card ── */}
