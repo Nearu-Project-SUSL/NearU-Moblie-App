@@ -13,14 +13,28 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.nearu.app"
+      "bundleIdentifier": "com.nearu.app",
+      "infoPlist": {
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": [
+              "com.googleusercontent.apps.390715786042-fntmhdme2842ap78uul3rbjnjjp6phuh"
+            ]
+          }
+        ]
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0F172A"
       },
-      "package": "com.nearu.app"
+      "package": "com.nearu.app",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyD1n0S32uyMmOtHiM5Q4FpYMBV_BqL28WE"
+        }
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -28,8 +42,20 @@
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.390715786042-fntmhdme2842ap78uul3rbjnjjp6phuh"
+        }
+      ]
     ],
-    "scheme": "nearu"
+    "scheme": "nearu",
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "0c9a3978-9c60-4f89-9211-9012d5820aea"
+      }
+    }
   }
 }

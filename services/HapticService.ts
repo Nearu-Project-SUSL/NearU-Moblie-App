@@ -9,4 +9,7 @@ export const HapticService = {
   triggerSelection: () => {},
   triggerError: () => {},
   triggerSuccess: () => {},
+  triggerWarning: () => {},
+  triggerNotification: () => {},
 };
+

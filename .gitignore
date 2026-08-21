@@ -1,75 +1,97 @@
-# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
-
-# dependencies
+# -----------------------------------------------------------------------------
+# Node / Dependencies
+# -----------------------------------------------------------------------------
 node_modules/
-package-lock.json
 
-# Expo
+# -----------------------------------------------------------------------------
+# Expo / Build outputs
+# -----------------------------------------------------------------------------
 .expo/
 dist/
 web-build/
-expo-env.d.ts
-
-# Metro
-.metro-health-check*
-
-# debug
-npm-debug.*
-yarn-debug.*
-yarn-error.*
-
-# macOS
-.DS_Store
-*.pem
-
-# local env files
-.env*.local
-.env
-
-# typescript
+*.map
 *.tsbuildinfo
 
-# Xcode / iOS
-build/
-*.pbxuser
-!default.pbxuser
-*.mode1v3
-!default.mode1v3
-*.mode2v3
-!default.mode2v3
-*.perspectivev3
-!default.perspectivev3
-userdata/
-*.xccheckout
-*.xcworkspace
-!default.xcworkspace
-*.xcuserstate
-*.xcappdata
-*.ipa
-*.sublime-project
-*.sublime-workspace
-*.mime
+# -----------------------------------------------------------------------------
+# Environment & Secrets
+# -----------------------------------------------------------------------------
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
 
-# Android
-.gradle/
-local.properties
+# -----------------------------------------------------------------------------
+# Logs & Debugging
+# -----------------------------------------------------------------------------
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# -----------------------------------------------------------------------------
+# OS & System Files
+# -----------------------------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# -----------------------------------------------------------------------------
+# IDE & Editors
+# -----------------------------------------------------------------------------
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.expo-shared/
+
+# -----------------------------------------------------------------------------
+# Android Native Build Artifacts (for committed android/ folder)
+# -----------------------------------------------------------------------------
+android/.gradle/
+android/build/
+android/local.properties
+android/app/build/
+android/app/.cxx/
+android/.kotlin/
+android/captures/
 *.apk
+*.aab
 *.aar
-*.ap_
-*.der
-*.crash
-*.dump
-*.jack
-*.m
-*.native
-*.res
-*.so
-*.xml
-captures/
-*.jks
-*.p8
-*.p12
-*.key
+
+# -----------------------------------------------------------------------------
+# iOS Native Build Artifacts (for committed ios/ folder if generated)
+# -----------------------------------------------------------------------------
+ios/build/
+ios/DerivedData/
+ios/Pods/
+ios/local.properties
+ios/.xcode.env.local
+ios/xcuserdata/
+ios/**/*.xcuserdata/
+ios/*.xcworkspace/
+!ios/default.xcworkspace
+*.ipa
 *.mobileprovision
 
-app-example
+# -----------------------------------------------------------------------------
+# Fastlane
+# -----------------------------------------------------------------------------
+**/fastlane/report.xml
+**/fastlane/Preview.html
+**/fastlane/screenshots
+**/fastlane/test_output
+
+# -----------------------------------------------------------------------------
+# React Native / Bundler
+# -----------------------------------------------------------------------------
+*.jsbundle

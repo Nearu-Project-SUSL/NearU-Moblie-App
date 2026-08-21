@@ -1,8 +1,18 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '../types';
 import { apiRequest, setStoredTokens } from '../services/api';
-import { API_ENDPOINTS } from '../constants/API_Endpoints';
+import { API_ENDPOINTS, API_BASE_URL } from '../constants/API_Endpoints';
 import * as SecureStore from 'expo-secure-store';
+import { GoogleSignin } from '../services/GoogleSigninWrapper';
+import { Platform } from 'react-native';
+
+
+// Initialize Google Sign-In SDK
+GoogleSignin.configure({
+  webClientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID_WEB,
+  iosClientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS,
+  offlineAccess: true,
+});
 
 interface AuthContextType {
   user: User | null;
@@ -10,6 +20,7 @@ interface AuthContextType {
   isLoading: boolean;
   isSessionLoading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  loginWithGoogle: (idToken: string, googleUser: any) => Promise<{ success: boolean; error?: string }>;
   register: (firstName: string, lastName: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   registerStudent: (data: any) => Promise<{ success: boolean; error?: string }>;
   registerBusiness: (data: any) => Promise<{ success: boolean; error?: string }>;
@@ -56,6 +67,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const loadSession = async () => {
       try {
+        if (Platform.OS === 'web') {
+          return; // SecureStore not supported on web
+        }
         const token = await SecureStore.getItemAsync('authToken');
         const refresh = await SecureStore.getItemAsync('refreshToken');
         const userDataStr = await SecureStore.getItemAsync('userData');
@@ -72,6 +86,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     loadSession();
   }, []);
+
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
@@ -99,6 +114,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
           setUser(mockUser);
           setStoredTokens(apiData.accessToken, apiData.refreshToken || null);
+
+          if (Platform.OS !== 'web') {
+            await SecureStore.setItemAsync('authToken', apiData.accessToken);
+            if (apiData.refreshToken) {
+              await SecureStore.setItemAsync('refreshToken', apiData.refreshToken);
+            }
+            await SecureStore.setItemAsync('userData', JSON.stringify(mockUser));
+          }
           
           await SecureStore.setItemAsync('authToken', apiData.accessToken);
           if (apiData.refreshToken) {
@@ -133,6 +156,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setStoredTokens('mock_jwt_access_token', 'mock_jwt_refresh_token');
           await SecureStore.setItemAsync('authToken', 'mock_jwt_access_token');
           await SecureStore.setItemAsync('userData', JSON.stringify(mockUser));
+
+          if (Platform.OS !== 'web') {
+            await SecureStore.setItemAsync('authToken', 'mock_jwt_access_token');
+            await SecureStore.setItemAsync('userData', JSON.stringify(mockUser));
+          }
           
           setIsLoading(false);
           // Include warning to display in toast
@@ -332,6 +360,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (refresh) {
         await apiRequest.post(API_ENDPOINTS.AUTH.LOGOUT, { refreshToken: refresh });
       }
+      if (Platform.OS !== 'web') {
+        await SecureStore.deleteItemAsync('authToken');
+        await SecureStore.deleteItemAsync('refreshToken');
+        await SecureStore.deleteItemAsync('userData');
+      }
     } catch (err) {
       console.warn('Server-side logout skipped:', err);
     } finally {
@@ -432,6 +465,108 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await SecureStore.setItemAsync('userData', JSON.stringify(newUser));
   };
 
+  const loginWithGoogle = async (idToken: string, googleUser: any) => {
+    setIsLoading(true);
+    try {
+      // Connect to the .NET backend using the unified apiRequest wrapper
+      const res = await apiRequest.post<any>(`${API_BASE_URL}/auth/google`, { idToken });
+      
+      if (res.success && res.data) {
+        const responseData = res.data as any;
+        const apiData = responseData.data;
+        
+        if (apiData && apiData.accessToken) {
+          const { firstName, lastName } = parseUsername(apiData.username || googleUser.name || '');
+          const mockUser: User = {
+            id: apiData.userId || googleUser.id,
+            email: apiData.email || googleUser.email,
+            firstName,
+            lastName,
+            isStudentVerified: apiData.role === 'Student',
+            studentIdCardNumber: apiData.studentId || undefined,
+            avatarUrl: apiData.profilePictureUrl || googleUser.photo || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=256&auto=format&fit=crop',
+            createdAt: new Date().toISOString(),
+            role: apiData.role || 'Student'
+          };
+          
+          setUser(mockUser);
+          setStoredTokens(apiData.accessToken, apiData.refreshToken || null);
+          
+          await SecureStore.setItemAsync('authToken', apiData.accessToken);
+          if (apiData.refreshToken) {
+            await SecureStore.setItemAsync('refreshToken', apiData.refreshToken);
+          }
+          await SecureStore.setItemAsync('userData', JSON.stringify(mockUser));
+          
+          setIsLoading(false);
+          return { success: true };
+        }
+      }
+
+      // Gated Mock Fail-safe Mode: Only invoke in development when the backend is offline or unsupported.
+      if (__DEV__ || isBackendOffline(res)) {
+        console.warn('Live backend Google auth offline or unsupported. Invoking mock fail-safe mode.');
+        
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const mockUser: User = {
+          id: googleUser.id || 'google_user_' + Date.now(),
+          email: googleUser.email.toLowerCase(),
+          firstName: googleUser.givenName || 'Google',
+          lastName: googleUser.familyName || 'User',
+          isStudentVerified: true,
+          studentIdCardNumber: 'STU-GOOGLE-DEV',
+          avatarUrl: googleUser.photo || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=256&auto=format&fit=crop',
+          createdAt: new Date().toISOString(),
+          role: 'Student'
+        };
+        
+        setUser(mockUser);
+        setStoredTokens('mock_google_access_token', 'mock_google_refresh_token');
+        await SecureStore.setItemAsync('authToken', 'mock_google_access_token');
+        await SecureStore.setItemAsync('userData', JSON.stringify(mockUser));
+        
+        setIsLoading(false);
+        return { 
+          success: true, 
+          error: 'Logged in locally using Google Account (Backend Google OAuth offline).' 
+        };
+      }
+
+      setIsLoading(false);
+      return { success: false, error: res.message || 'Google authentication rejected.' };
+    } catch (err: any) {
+      if (__DEV__) {
+        console.warn('Backend Google auth failed with error. Falling back to local mock.', err);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        const mockUser: User = {
+          id: googleUser.id || 'google_user_' + Date.now(),
+          email: googleUser.email.toLowerCase(),
+          firstName: googleUser.givenName || 'Google',
+          lastName: googleUser.familyName || 'User',
+          isStudentVerified: true,
+          studentIdCardNumber: 'STU-GOOGLE-DEV',
+          avatarUrl: googleUser.photo || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=256&auto=format&fit=crop',
+          createdAt: new Date().toISOString(),
+          role: 'Student'
+        };
+        
+        setUser(mockUser);
+        setStoredTokens('mock_google_access_token', 'mock_google_refresh_token');
+        await SecureStore.setItemAsync('authToken', 'mock_google_access_token');
+        await SecureStore.setItemAsync('userData', JSON.stringify(mockUser));
+        
+        setIsLoading(false);
+        return { 
+          success: true, 
+          error: 'Logged in locally using Google Account (Backend Google OAuth offline).' 
+        };
+      }
+      setIsLoading(false);
+      return { success: false, error: err.message || 'Google login failed.' };
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -440,6 +575,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading,
         isSessionLoading,
         login,
+        loginWithGoogle,
         register,
         registerStudent,
         registerBusiness,

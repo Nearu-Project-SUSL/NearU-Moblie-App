@@ -80,16 +80,14 @@ export interface HotDeal {
   badge: string;
   badgeColor: string;
   imageUrl?: string;
+  shopName?: string;
+  shopType?: string;
+  shopAddress?: string | null;
+  validFrom?: string | null;
+  validTo?: string | null;
 }
 
-export interface Testimonial {
-  id: string;
-  userName: string;
-  userInitial: string;
-  message: string;
-  rating: number;
-  createdAt: string;
-}
+
 
 export interface HomeService {
   id: string;
@@ -100,3 +98,90 @@ export interface HomeService {
   color: string;
 }
 
+// ── Job Section Types ────────────────────────────────────────────────────────
+
+export interface PostedByInfo {
+  userId: string;
+  name: string;
+  email: string;
+  avatar: string | null;
+  mobileNumber?: string;
+}
+
+export interface JobResponse {
+  id: string;
+  title: string;
+  company: string;
+  location: string;
+  payRange: string;
+  jobType: string;
+  category: string;
+  logo: string | null;
+  description: string;
+  longDescription: string | null;
+  requirements: string[] | null;
+  tags: string[] | null;
+  isNew: boolean;
+  postedBy: PostedByInfo;
+  createdAt: string;
+  postedAt?: string;
+}
+
+export interface PagedJobResponse {
+  items: JobResponse[];
+  totalCount: number;
+  totalPages: number;
+  currentPage: number;
+  pageSize: number;
+}
+
+export interface CreateJobData {
+  title: string;
+  company: string;
+  location: string;
+  payRange: string;
+  jobType: string;
+  category: string;
+  logo?: string;
+  description: string;
+  longDescription?: string;
+  requirements?: string[];
+  tags?: string[];
+  isNew?: boolean;
+}
+
+export interface UpdateJobData {
+  title?: string;
+  company?: string;
+  location?: string;
+  payRange?: string;
+  jobType?: string;
+  category?: string;
+  logo?: string;
+  description?: string;
+  longDescription?: string;
+  requirements?: string[];
+  tags?: string[];
+  isNew?: boolean;
+}
+
+export interface DealResponseDto {
+  id: string;
+  shopName: string;
+  shopType: string;
+  title: string;
+  description: string;
+  badgeText: string;
+  badgeColor: string;
+  imageUrl: string | null;
+  validFrom: string | null;
+  validTo: string | null;
+  submittedByUserId: string;
+  submittedByName: string;
+  shopAddress: string | null;
+  approvalStatus: string;
+  rejectionReason: string | null;
+  createdAt: string;
+}
+
+export * from './notification';
